@@ -5,7 +5,7 @@ import { useSession } from '../../features/auth/session'
 
 // Adresse de l'API = le backend de la plateforme web (mêmes comptes, mêmes données).
 // EXPO_PUBLIC_API_URL (fichier .env / eas.json), sinon le serveur de production.
-export const DEFAULT_API_URL = 'http://16.171.169.105'
+export const DEFAULT_API_URL = 'https://eflotte.camusatsn.com'
 export const BASE_URL = (process.env.EXPO_PUBLIC_API_URL?.trim() || DEFAULT_API_URL).replace(/\/$/, '')
 
 export const api = axios.create({ baseURL: BASE_URL, timeout: 60_000 })

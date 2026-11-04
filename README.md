@@ -41,14 +41,10 @@ React Native, TypeScript, React Navigation, TanStack Query, zustand, axios, luci
 
 ## Adresse de l'API
 
-`EXPO_PUBLIC_API_URL` dans `.env` (développement) et `eas.json` (APK) — par défaut le serveur de
-production `http://16.171.169.105`. Autre serveur pour un test : fichier `.env.local` (non suivi par git)
-avec `EXPO_PUBLIC_API_URL=http://…`.
-
-⚠ Le serveur est en **HTTP** (adresse IP, pas de certificat) : l'APK autorise ce trafic
-(`usesCleartextTraffic` dans `app.json`). Dès qu'un nom de domaine en HTTPS est en place
-(Caddy le fait automatiquement), mettre `https://…` dans `.env` et `eas.json`, et retirer
-`usesCleartextTraffic`.
+`EXPO_PUBLIC_API_URL` dans `.env` (développement et mises à jour) et `eas.json` (APK) — par défaut
+la plateforme de production **`https://eflotte.camusatsn.com`** (l'API est servie sous `/api`, comme pour
+le site web). Autre serveur pour un test : fichier `.env.local` (non suivi par git) avec
+`EXPO_PUBLIC_API_URL=https://…`.
 
 ⚠ Les rapports envoyés depuis l'app sont de vrais rapports sur le serveur utilisé.
 
