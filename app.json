@@ -1,0 +1,51 @@
+{
+  "expo": {
+    "name": "eFlotte Camusat",
+    "slug": "eflotte-camusat",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "eflottemobile",
+    "icon": "./assets/camusat-logo.png",
+    "userInterfaceStyle": "light",
+    "android": {
+      "package": "com.camusat.eflotte",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "backgroundColor": "#FFFFFF",
+        "foregroundImage": "./assets/camusat-logo.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "permissions": ["CAMERA"]
+    },
+    "plugins": [
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "minSdkVersion": 24,
+            "buildArchs": ["arm64-v8a", "armeabi-v7a"],
+            "usesCleartextTraffic": true
+          }
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/camusat-logo.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#ffffff"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "L'application utilise l'appareil photo pour les photos du véhicule de la checklist.",
+          "photosPermission": false,
+          "microphonePermission": false
+        }
+      ],
+      "expo-secure-store"
+    ]
+  }
+}
