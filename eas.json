@@ -5,14 +5,24 @@
   },
   "build": {
     "preview": {
+      "channel": "preview",
       "distribution": "internal",
-      "android": { "buildType": "apk" },
-      "env": { "EXPO_PUBLIC_API_URL": "http://16.171.169.105" },
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "http://16.171.169.105"
+      },
       "autoIncrement": true
     },
     "production": {
-      "android": { "buildType": "app-bundle" },
-      "env": { "EXPO_PUBLIC_API_URL": "http://16.171.169.105" },
+      "channel": "production",
+      "android": {
+        "buildType": "app-bundle"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "http://16.171.169.105"
+      },
       "autoIncrement": true
     }
   }

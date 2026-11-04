@@ -17,6 +17,7 @@ import RapportDetailScreen from './app/RapportDetailScreen'
 import MainTabs from './app/tabs/MainTabs'
 import { AppHeaderBar } from './components/AppHeader'
 import { ToasterProvider } from './components/ui/Toaster'
+import UpdateBanner from './components/UpdateBanner'
 import { profil } from './features/auth/api'
 import { useSession } from './features/auth/session'
 import { navigationRef } from './lib/navigationRef'
@@ -39,6 +40,8 @@ export default function App() {
           <NavigationContainer ref={navigationRef}>
             <Root />
           </NavigationContainer>
+          {/* Bandeau « Mise à jour disponible » (EAS Update) */}
+          <UpdateBanner />
         </SafeAreaProvider>
       </ToasterProvider>
     </PersistQueryClientProvider>

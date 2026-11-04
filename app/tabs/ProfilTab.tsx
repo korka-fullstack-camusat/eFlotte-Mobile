@@ -10,6 +10,7 @@ import { Chargement, Erreur } from '../../components/Etats'
 import { COLORS } from '../../design/theme'
 import { useSession } from '../../features/auth/session'
 import { inspections } from '../../features/inspections/api'
+import { libelleVersion } from '../../features/version'
 import { resetTo } from '../../lib/navigationRef'
 import { S as shared } from './shared'
 
@@ -79,6 +80,8 @@ export default function ProfilTab() {
           <Text style={[P.actionText, { color: '#b91c1c' }]}>Se déconnecter</Text>
         </Pressable>
       </View>
+
+      <Text style={P.version}>{libelleVersion()}</Text>
     </ScrollView>
   )
 }
@@ -97,4 +100,5 @@ const P = StyleSheet.create({
   sep: { height: StyleSheet.hairlineWidth, backgroundColor: COLORS.border },
   action: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14 },
   actionText: { fontSize: 15, fontWeight: '800', color: COLORS.blue900 },
+  version: { textAlign: 'center', color: COLORS.muted, fontSize: 12, fontWeight: '600' },
 })

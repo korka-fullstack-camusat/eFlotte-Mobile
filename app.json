@@ -2,7 +2,16 @@
   "expo": {
     "name": "eFlotte Camusat",
     "slug": "eflotte-camusat",
+    "owner": "korka-diallo",
     "version": "1.0.0",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "enabled": true,
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0
+    },
     "orientation": "portrait",
     "scheme": "eflottemobile",
     "icon": "./assets/camusat-logo.png",
@@ -15,7 +24,9 @@
         "foregroundImage": "./assets/camusat-logo.png"
       },
       "predictiveBackGestureEnabled": false,
-      "permissions": ["CAMERA"]
+      "permissions": [
+        "CAMERA"
+      ]
     },
     "plugins": [
       [
@@ -23,7 +34,10 @@
         {
           "android": {
             "minSdkVersion": 24,
-            "buildArchs": ["arm64-v8a", "armeabi-v7a"],
+            "buildArchs": [
+              "arm64-v8a",
+              "armeabi-v7a"
+            ],
             "usesCleartextTraffic": true
           }
         }

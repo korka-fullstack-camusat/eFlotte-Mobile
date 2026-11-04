@@ -57,19 +57,40 @@ avec `EXPO_PUBLIC_API_URL=http://…`.
 Une seule fois :
 ```bash
 npm install -g eas-cli
-eas login              # compte Expo (gratuit) du propriétaire du projet
-eas init               # relie le projet au compte (ajoute extra.eas.projectId dans app.json)
+eas login              # compte Expo du propriétaire (« owner » dans app.json : korka-diallo)
+eas init               # crée le projet Expo : ajoute extra.eas.projectId dans app.json
+eas update:configure   # active les mises à jour : ajoute updates.url dans app.json
 ```
-Puis à chaque version :
-```bash
-npm run build:apk      # = eas build -p android --profile preview
-```
-EAS construit l'APK dans le cloud et donne un lien de téléchargement / QR code à partager aux
-chauffeurs (installation hors Play Store : autoriser « sources inconnues »).
-Pour le Play Store : `npm run build:prod` (fichier `.aab`).
+Committer ensuite `app.json` (projectId + updates.url).
 
-Avant une nouvelle version installable : incrémenter `version` dans `app.json`
-(`versionCode` est incrémenté automatiquement par EAS).
+Puis :
+```bash
+npm run build:apk      # = eas build -p android --profile preview  → APK (canal « preview »)
+```
+EAS construit l'APK dans le cloud et donne un lien / QR code de téléchargement à partager aux
+chauffeurs (installation hors Play Store : autoriser « sources inconnues »).
+Pour le Play Store : `npm run build:prod` (fichier `.aab`, canal « production »).
+
+## Mises à jour sans réinstaller l'APK (bouton « Mettre à jour »)
+
+L'app vérifie au lancement, au retour au premier plan, puis toutes les 45 s s'il existe une
+mise à jour (EAS Update). Si oui, elle la télécharge en arrière-plan et affiche le bandeau
+**« Mise à jour disponible » → Mettre à jour** : l'app redémarre aussitôt sur la nouvelle version.
+La version installée est affichée en bas du **Profil** (avec la date de la dernière mise à jour reçue).
+
+Publier une mise à jour (écrans, textes, correctifs : tout le code JavaScript / TypeScript) :
+```bash
+npm run update:preview -- "Description de la mise à jour"   # APK du profil preview
+npm run update:prod -- "Description de la mise à jour"      # build production (Play Store)
+```
+- L'adresse de l'API d'une mise à jour vient du fichier `.env` (pas d'`eas.json`) : vérifier
+  qu'aucun `.env.local` de test n'est présent avant de publier.
+- Une mise à jour ne s'applique qu'aux APK de même **`version`** (`runtimeVersion` = `version` d'`app.json`)
+  et du même canal.
+- **Nouvel APK obligatoire** (les chauffeurs le réinstallent une fois) quand on ajoute ou modifie
+  un module natif, une permission, l'icône ou le nom de l'app, ou qu'on passe à un nouveau SDK Expo :
+  incrémenter alors `version` dans `app.json` (ex. 1.0.0 → 1.1.0) puis `npm run build:apk`.
+- Inactif dans Expo Go et en développement.
 
 ## Vérifications
 
