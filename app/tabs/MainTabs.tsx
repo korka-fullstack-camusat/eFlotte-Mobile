@@ -27,6 +27,7 @@ export default function MainTabs() {
         tabBarInactiveTintColor: 'rgba(255,255,255,0.6)',
         tabBarLabelStyle: { fontSize: 12, fontWeight: '800' },
         tabBarStyle: { backgroundColor: COLORS.blue900, borderTopWidth: 0, ...webBar },
+        tabBarHideOnKeyboard: true,   // la barre ne masque pas les champs pendant la saisie
       }}
     >
       <Tab.Screen name="Accueil" component={HomeTab}

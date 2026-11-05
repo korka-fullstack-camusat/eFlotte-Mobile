@@ -2,8 +2,9 @@
 // nature (explication libre), immatriculation, kilométrage actuel, position, technicien. Le serveur prévient les responsables par e-mail.
 import { useNavigation, useRoute } from '@react-navigation/native'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Send } from 'lucide-react-native'
-import { useState } from 'react'
+import { useHeaderHeight } from '@react-navigation/elements'
+import { Send, X } from 'lucide-react-native'
+import { useRef, useState, type ComponentRef, type Ref } from 'react'
 import {
   ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View,
 } from 'react-native'
@@ -15,11 +16,16 @@ import { useSession } from '../features/auth/session'
 import { demandes, NATURES, type NatureDemande } from '../features/demandes/api'
 import { messageErreur } from '../lib/http/api'
 
-function Champ({ label, erreur, ...props }: { label: string; erreur?: string } & React.ComponentProps<typeof TextInput>) {
+type Saisie = ComponentRef<typeof TextInput>
+type ChampProps = { label: string; erreur?: string; onPosition?: (y: number) => void; ref?: Ref<Saisie> }
+  & Omit<React.ComponentProps<typeof TextInput>, 'ref'>
+
+/** Champ du formulaire ; signale sa position pour que le défilement l'amène au-dessus du clavier. */
+function Champ({ label, erreur, onPosition, ref, ...props }: ChampProps) {
   return (
-    <View style={{ gap: 6 }}>
+    <View style={{ gap: 6 }} onLayout={(e) => onPosition?.(e.nativeEvent.layout.y)}>
       <Text style={F.label}>{label}</Text>
-      <TextInput placeholderTextColor="#9CA3AF" accessibilityLabel={label}
+      <TextInput ref={ref} placeholderTextColor="#9CA3AF" accessibilityLabel={label}
         style={[F.input, !!erreur && { borderColor: COLORS.red600 }]} {...props} />
       {!!erreur && <Text style={F.erreur}>{erreur}</Text>}
     </View>
@@ -57,6 +63,20 @@ export default function DemandeFormScreen() {
   const valide = !Object.values(erreurs).some(Boolean)
   const Icone = ICONES_NATURE[nature]
 
+  // Clavier : le champ touché est remonté juste sous l'en-tête, toujours visible pendant la saisie
+  const hauteurEntete = useHeaderHeight()
+  const defilement = useRef<ComponentRef<typeof ScrollView>>(null)
+  const positions = useRef<Record<string, number>>({})
+  const refImmat = useRef<Saisie>(null)
+  const refKm = useRef<Saisie>(null)
+  const refPosition = useRef<Saisie>(null)
+  const refTechnicien = useRef<Saisie>(null)
+  const placer = (cle: string) => (y: number) => { positions.current[cle] = y }
+  const montrer = (cle: string) => () => {
+    setTimeout(() => defilement.current?.scrollTo({ y: Math.max(0, (positions.current[cle] ?? 0) - 12), animated: true }), 250)
+  }
+  const champ = (cle: string) => ({ onPosition: placer(cle), onFocus: montrer(cle) })
+
   const envoi = useMutation({
     mutationFn: () => demandes.creer({
       nature, immatriculation: immatriculation.trim(), kilometrage: km, position: position.trim(), technicien: technicien.trim(),
@@ -77,8 +97,10 @@ export default function DemandeFormScreen() {
   }
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: '#fff' }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView contentContainerStyle={F.container} keyboardShouldPersistTaps="handled">
+    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: '#fff' }} behavior="padding"
+      keyboardVerticalOffset={Platform.OS === 'ios' ? hauteurEntete : 0}>
+      <ScrollView ref={defilement} contentContainerStyle={F.container} keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="none" automaticallyAdjustKeyboardInsets>
         <View style={F.entete}>
           <Icone color={COLORS.blue900} size={26} />
           <Text style={F.titre} accessibilityRole="header">Demande : {NATURES[nature]}</Text>
@@ -86,29 +108,39 @@ export default function DemandeFormScreen() {
 
         <Champ label="Nature" value={description} onChangeText={setDescription} multiline textAlignVertical="top"
           placeholder={EXEMPLES[nature]} style={[F.input, F.zoneTexte, essai && !!erreurs.description && { borderColor: COLORS.red600 }]}
-          erreur={essai ? erreurs.description : ''} />
+          erreur={essai ? erreurs.description : ''} {...champ('description')} />
 
-        <Champ label="Immatriculation" value={immatriculation} onChangeText={setImmatriculation} autoCapitalize="characters"
-          placeholder="AA 123 BB" erreur={essai ? erreurs.immatriculation : ''} />
-        <Champ label="Kilométrage actuel" value={kilometrage} onChangeText={(t) => setKilometrage(t.replace(/[^\d\s]/g, ''))}
-          keyboardType="number-pad" placeholder="Ex. : 45300" erreur={essai ? erreurs.kilometrage : ''} />
-        <Champ label="Position" value={position} onChangeText={setPosition} placeholder="Ex. : Dakar, Liberté 6"
-          erreur={essai ? erreurs.position : ''} />
-        <Champ label="Technicien" value={technicien} onChangeText={setTechnicien} placeholder="Nom du technicien"
-          autoCapitalize="words" erreur={essai ? erreurs.technicien : ''} onSubmitEditing={envoyer} returnKeyType="send" />
+        <Champ ref={refImmat} label="Immatriculation" value={immatriculation} onChangeText={setImmatriculation}
+          autoCapitalize="characters" placeholder="AA 123 BB" erreur={essai ? erreurs.immatriculation : ''}
+          returnKeyType="next" submitBehavior="submit" onSubmitEditing={() => refKm.current?.focus()} {...champ('immatriculation')} />
+        <Champ ref={refKm} label="Kilométrage actuel" value={kilometrage} onChangeText={(t) => setKilometrage(t.replace(/[^\d\s]/g, ''))}
+          keyboardType="number-pad" placeholder="Ex. : 45300" erreur={essai ? erreurs.kilometrage : ''}
+          returnKeyType="next" submitBehavior="submit" onSubmitEditing={() => refPosition.current?.focus()} {...champ('kilometrage')} />
+        <Champ ref={refPosition} label="Position" value={position} onChangeText={setPosition} placeholder="Ex. : Dakar, Liberté 6"
+          erreur={essai ? erreurs.position : ''}
+          returnKeyType="next" submitBehavior="submit" onSubmitEditing={() => refTechnicien.current?.focus()} {...champ('position')} />
+        <Champ ref={refTechnicien} label="Technicien" value={technicien} onChangeText={setTechnicien} placeholder="Nom du technicien"
+          autoCapitalize="words" erreur={essai ? erreurs.technicien : ''} onSubmitEditing={envoyer} returnKeyType="send" {...champ('technicien')} />
 
-        <Pressable onPress={envoyer} disabled={envoi.isPending} accessibilityRole="button"
-          style={({ pressed }) => [F.bouton, (pressed || envoi.isPending) && { opacity: 0.85 }]}>
-          {envoi.isPending ? <ActivityIndicator color="#fff" /> : <Send color="#fff" size={20} />}
-          <Text style={F.boutonTexte}>Envoyer la demande</Text>
-        </Pressable>
+        <View style={F.boutons}>
+          <Pressable onPress={envoyer} disabled={envoi.isPending} accessibilityRole="button"
+            style={({ pressed }) => [F.bouton, (pressed || envoi.isPending) && { opacity: 0.85 }]}>
+            {envoi.isPending ? <ActivityIndicator color="#fff" /> : <Send color="#fff" size={20} />}
+            <Text style={F.boutonTexte}>Envoyer la demande</Text>
+          </Pressable>
+          <Pressable onPress={() => nav.goBack()} disabled={envoi.isPending} accessibilityRole="button"
+            style={({ pressed }) => [F.annuler, pressed && { opacity: 0.7 }]}>
+            <X color={COLORS.blue900} size={18} />
+            <Text style={F.annulerTexte}>Annuler</Text>
+          </Pressable>
+        </View>
       </ScrollView>
     </KeyboardAvoidingView>
   )
 }
 
 const F = StyleSheet.create({
-  container: { padding: 16, gap: 16, paddingBottom: 40 },
+  container: { padding: 16, gap: 16, paddingBottom: 120 },
   titre: { fontSize: 24, fontWeight: '900', color: COLORS.blue900 },
   label: { fontWeight: '800', color: COLORS.text, fontSize: 14 },
   input: {
@@ -118,9 +150,15 @@ const F = StyleSheet.create({
   erreur: { color: COLORS.red600, fontSize: 12, fontWeight: '700' },
   entete: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   zoneTexte: { minHeight: 110, paddingTop: 12, paddingBottom: 12 },
+  boutons: { flexDirection: 'row', gap: 10, marginTop: 8 },
   bouton: {
-    minHeight: 56, borderRadius: 18, backgroundColor: COLORS.blue900, marginTop: 8,
+    flex: 2, minHeight: 56, borderRadius: 18, backgroundColor: COLORS.blue900,
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
   },
+  annuler: {
+    flex: 1, minHeight: 56, borderRadius: 18, borderWidth: 1, borderColor: COLORS.blue100, backgroundColor: COLORS.blue50,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
+  },
+  annulerTexte: { color: COLORS.blue900, fontWeight: '900', fontSize: 15 },
   boutonTexte: { color: '#fff', fontWeight: '900', fontSize: 16 },
 })
