@@ -2,8 +2,9 @@
 // suivi, page par page (pagination côté serveur) au fil du défilement.
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native'
 import { useInfiniteQuery } from '@tanstack/react-query'
-import { useCallback, useState } from 'react'
-import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native'
+import { useCallback, useEffect, useState } from 'react'
+import { Search, X } from 'lucide-react-native'
+import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from 'react-native'
 
 import { CarteDemande } from '../../components/Demandes'
 import { Chargement, Erreur, Vide } from '../../components/Etats'
@@ -11,7 +12,7 @@ import { RapportCarte } from '../../components/Rapports'
 import { COLORS } from '../../design/theme'
 import { demandes } from '../../features/demandes/api'
 import { inspections } from '../../features/inspections/api'
-import { S, Titre } from './shared'
+import { S } from './shared'
 
 const PAGE = 15
 type Onglet = 'rapports' | 'demandes'
@@ -52,9 +53,17 @@ export default function HistoriqueTab() {
     initialPageParam: 1,
     getNextPageParam: (last, pages) => (pages.length * PAGE < last.total ? pages.length + 1 : undefined),
   })
+  // Recherche dans mes demandes (relancée à la fin de la saisie)
+  const [recherche, setRecherche] = useState('')
+  const [motCle, setMotCle] = useState('')
+  useEffect(() => {
+    const t = setTimeout(() => setMotCle(recherche.trim()), 350)
+    return () => clearTimeout(t)
+  }, [recherche])
+
   const demandesQ = useInfiniteQuery({
-    queryKey: ['mesDemandes'],
-    queryFn: ({ pageParam }) => demandes.mes(pageParam, PAGE),
+    queryKey: ['mesDemandes', motCle],
+    queryFn: ({ pageParam }) => demandes.mes(pageParam, PAGE, motCle),
     initialPageParam: 1,
     getNextPageParam: (last, pages) => (pages.length * PAGE < last.total ? pages.length + 1 : undefined),
     enabled: onglet === 'demandes',
@@ -67,12 +76,31 @@ export default function HistoriqueTab() {
   const q = onglet === 'rapports' ? rapportsQ : demandesQ
   const total = q.data?.pages[0]?.total ?? 0
   const sousTitre = !q.data ? undefined
-    : onglet === 'rapports' ? pluriel(total, 'rapport', 'envoyé') : pluriel(total, 'demande', 'envoyée')
+    : onglet === 'rapports' ? pluriel(total, 'rapport', 'envoyé')
+      : motCle ? `${total} résultat${total > 1 ? 's' : ''}` : pluriel(total, 'demande', 'envoyée')
 
   const entete = (
-    <View style={{ gap: 8, marginBottom: 12 }}>
-      <Titre title="Historique" subtitle={sousTitre} />
-      <Onglets actif={onglet} onChange={setOnglet} />
+    <View style={{ gap: 12, marginBottom: 12 }}>
+      <View style={H.ligneTitre}>
+        <View style={{ flex: 1 }}>
+          <Text style={S.title} accessibilityRole="header">Historiques</Text>
+          {!!sousTitre && <Text style={S.subtitle}>{sousTitre}</Text>}
+        </View>
+        <Onglets actif={onglet} onChange={setOnglet} />
+      </View>
+      {onglet === 'demandes' && (
+        <View style={H.recherche}>
+          <Search color={COLORS.muted} size={18} />
+          <TextInput value={recherche} onChangeText={setRecherche} placeholder="Rechercher une demande (panne, plaque, lieu…)"
+            placeholderTextColor="#9aa7bd" accessibilityLabel="Rechercher une demande" returnKeyType="search"
+            style={H.rechercheTexte} />
+          {!!recherche && (
+            <Pressable onPress={() => setRecherche('')} hitSlop={10} accessibilityRole="button" accessibilityLabel="Effacer la recherche">
+              <X color={COLORS.muted} size={18} />
+            </Pressable>
+          )}
+        </View>
+      )}
     </View>
   )
   const commun = {
@@ -101,7 +129,7 @@ export default function HistoriqueTab() {
           data={demandesQ.data?.pages.flatMap((p) => p.items) ?? []}
           keyExtractor={(d) => `d${d.id}`}
           renderItem={({ item }) => <CarteDemande d={item} />}
-          ListEmptyComponent={vide('Aucune demande envoyée pour le moment.')} />
+          ListEmptyComponent={vide(motCle ? `Aucune demande ne correspond à « ${motCle} ».` : 'Aucune demande envoyée pour le moment.')} />
       )}
     </View>
   )
@@ -109,8 +137,14 @@ export default function HistoriqueTab() {
 
 const H = StyleSheet.create({
   container: { paddingHorizontal: 16, paddingBottom: 32, flexGrow: 1 },
-  onglets: { flexDirection: 'row', backgroundColor: COLORS.blue50, borderRadius: 14, padding: 4, borderWidth: 1, borderColor: COLORS.blue100 },
-  onglet: { flex: 1, minHeight: 40, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  ligneTitre: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingTop: 16 },
+  onglets: { flexDirection: 'row', backgroundColor: COLORS.blue50, borderRadius: 12, padding: 3, borderWidth: 1, borderColor: COLORS.blue100 },
+  onglet: { minHeight: 36, paddingHorizontal: 12, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
   ongletActif: { backgroundColor: COLORS.blue900 },
-  ongletTexte: { color: COLORS.blue900, fontWeight: '800', fontSize: 14 },
+  ongletTexte: { color: COLORS.blue900, fontWeight: '800', fontSize: 13 },
+  recherche: {
+    flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 46, paddingHorizontal: 12,
+    borderWidth: 1, borderColor: COLORS.border, borderRadius: 14, backgroundColor: COLORS.gray50,
+  },
+  rechercheTexte: { flex: 1, fontSize: 15, color: COLORS.text, paddingVertical: 10 },
 })

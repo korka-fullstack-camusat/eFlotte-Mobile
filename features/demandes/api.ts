@@ -33,6 +33,6 @@ export interface NouvelleDemande {
 
 export const demandes = {
   creer: async (d: NouvelleDemande): Promise<Demande> => (await api.post('/api/demandes', d)).data,
-  mes: async (page = 1, page_size = 20): Promise<{ items: Demande[]; total: number }> =>
-    (await api.get('/api/demandes/mes', { params: { page, page_size } })).data,
+  mes: async (page = 1, page_size = 20, q = ''): Promise<{ items: Demande[]; total: number }> =>
+    (await api.get('/api/demandes/mes', { params: { page, page_size, ...(q.trim() ? { q: q.trim() } : {}) } })).data,
 }
