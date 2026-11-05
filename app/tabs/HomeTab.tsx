@@ -3,7 +3,7 @@
 import { useFocusEffect, useNavigation } from '@react-navigation/native'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
-  BellRing, Car, CheckCircle2, ChevronRight, ClipboardCheck, ClipboardList, History, Inbox, Info, Wrench,
+  BellRing, CheckCircle2, ChevronRight, ClipboardCheck, ClipboardList, History, Inbox, Info, Wrench,
 } from 'lucide-react-native'
 import { useCallback } from 'react'
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native'
@@ -47,7 +47,7 @@ function CarteNotification({ c }: { c: Carte }) {
   )
 }
 
-function Tuile({ label, Icone, onPress }: { label: string; Icone: typeof Car; onPress: () => void }) {
+function Tuile({ label, Icone, onPress }: { label: string; Icone: typeof Wrench; onPress: () => void }) {
   return (
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={label}
       style={({ pressed }) => [H.tuile, pressed && { opacity: 0.85 }]}>
@@ -108,10 +108,7 @@ export default function HomeTab() {
       <View style={H.entete}>
         <Text style={shared.title} accessibilityRole="header" numberOfLines={1}>Bonjour {prenom} 👋</Text>
         {!!plaque && (
-          <View style={H.plaque}>
-            <Car color={COLORS.blue900} size={16} />
-            <Text style={H.plaqueLabel}>Matricule véhicule : <Text style={H.plaqueTexte}>{plaque}</Text></Text>
-          </View>
+          <Text style={H.plaqueLabel}>Matricule véhicule : <Text style={H.plaqueTexte}>{plaque}</Text></Text>
         )}
         <Text style={shared.subtitle}>{aujourdhuiLong()}</Text>
       </View>
@@ -185,8 +182,7 @@ export default function HomeTab() {
 const H = StyleSheet.create({
   container: { paddingHorizontal: 16, paddingBottom: 32 },
   entete: { paddingTop: 16, paddingBottom: 14, gap: 4 },
-  plaque: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 },
-  plaqueLabel: { color: COLORS.text, fontWeight: '700', fontSize: 14 },
+  plaqueLabel: { color: COLORS.text, fontWeight: '700', fontSize: 18, marginTop: 2 },
   plaqueTexte: { color: COLORS.blue900, fontWeight: '900', letterSpacing: 0.5 },
   ok: {
     flexDirection: 'row', gap: 10, alignItems: 'center', borderRadius: 16, borderWidth: 1, padding: 14,
