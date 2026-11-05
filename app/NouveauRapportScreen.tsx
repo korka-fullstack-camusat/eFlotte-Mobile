@@ -15,6 +15,7 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { StatusBar } from 'expo-status-bar'
 
+import AppareilPhoto, { type PhotoBrute } from '../components/AppareilPhoto'
 import ChampDate from '../components/ChampDate'
 import { Chargement, Erreur } from '../components/Etats'
 import SignaturePad from '../components/SignaturePad'
@@ -24,7 +25,7 @@ import { useSession } from '../features/auth/session'
 import { inspections } from '../features/inspections/api'
 import { type Brouillon, ecrireBrouillon, lireBrouillon } from '../features/inspections/brouillon'
 import { aujourdhuiIso, formatDate, formatNombre } from '../features/inspections/format'
-import { PermissionRefusee, photoEnAttente, prendrePhoto } from '../features/inspections/photo'
+import { photoEnAttente, reduire } from '../features/inspections/photo'
 import type { ChecklistModele, MonEspace, PhotoLocale, ReponseItem, VehiculeMini } from '../features/inspections/types'
 import { messageErreur } from '../lib/http/api'
 
@@ -183,21 +184,21 @@ function Formulaire({ modele, espace, vehicules, username, onEnvoye }: {
     })
   }
 
-  const photographier = async (position: string) => {
+  // Appareil photo intégré : ouvert sur la case touchée, la photo validée est réduite puis rangée
+  const [cameraPour, setCameraPour] = useState<string | null>(null)
+  const photographier = (position: string) => setCameraPour(position)
+  const photoPrise = async (brute: PhotoBrute) => {
+    const position = cameraPour
+    setCameraPour(null)
+    if (!position) return
     setPhotoEnCours(position)
     try {
-      // Tout est enregistré avant d'ouvrir l'appareil photo : Android peut fermer l'app pendant la prise de vue
-      await ecrireBrouillon(username, {
-        etape, immatriculation, kilometrage, visite_technique: visiteTechnique, items, autres, commentaires, photos,
-        photoAttendue: position,
-      })
-      const p = await prendrePhoto()
-      if (p) setPhotos((prev) => ({ ...prev, [position]: p }))
-    } catch (e) {
-      toast.error({ title: 'Photo impossible', message: e instanceof PermissionRefusee ? e.message : 'Réessayez.' })
+      const p = await reduire(brute)
+      setPhotos((prev) => ({ ...prev, [position]: p }))
+    } catch {
+      toast.error({ title: 'Photo impossible', message: 'Réessayez.' })
     } finally {
       setPhotoEnCours(null)
-      setPhotos((prev) => ({ ...prev }))   // réenregistre le brouillon sans « photo attendue »
     }
   }
 
@@ -435,6 +436,8 @@ function Formulaire({ modele, espace, vehicules, username, onEnvoye }: {
       </KeyboardAvoidingView>
 
       {/* Navigation entre les étapes */}
+      <AppareilPhoto visible={!!cameraPour} titre={modele.photos.find((p) => p.position === cameraPour)?.libelle ?? 'Photo'}
+        onFermer={() => setCameraPour(null)} onValider={(p) => { void photoPrise(p) }} />
       <SafeAreaView edges={['bottom']} style={F.navBas}>
         <Pressable onPress={() => aller(etape - 1)} disabled={etape === 0 || envoi} accessibilityRole="button"
           style={({ pressed }) => [F.btnRetour, (etape === 0 || envoi) && { opacity: 0.4 }, pressed && { opacity: 0.7 }]}>

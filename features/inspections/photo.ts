@@ -31,7 +31,8 @@ export async function photoEnAttente(): Promise<PhotoLocale | null> {
   }
 }
 
-async function reduire(a: ImagePicker.ImagePickerAsset): Promise<PhotoLocale> {
+/** Photo prise avec l'appareil intégré (components/AppareilPhoto) : même réduction. */
+export async function reduire(a: { uri: string; width: number; height: number }): Promise<PhotoLocale> {
   const grand = Math.max(a.width || 0, a.height || 0)
   const ctx = ImageManipulator.manipulate(a.uri)
   if (grand > COTE_MAX) ctx.resize(a.width >= a.height ? { width: COTE_MAX } : { height: COTE_MAX })
