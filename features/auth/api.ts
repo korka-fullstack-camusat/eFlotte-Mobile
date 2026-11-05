@@ -2,6 +2,8 @@ import { api } from '../../lib/http/api'
 import { type Utilisateur, useSession } from './session'
 
 export class AccesRefuse extends Error {}
+/** Identifiants acceptés, mais le profil n'a pas pu être lu ensuite (serveur pas à jour…). */
+export class ErreurProfil extends Error {}
 
 /** Connexion (formulaire OAuth2 de l'API), puis profil : l'application est réservée aux chauffeurs. */
 export async function connexion(username: string, password: string): Promise<Utilisateur> {
@@ -9,9 +11,19 @@ export async function connexion(username: string, password: string): Promise<Uti
   const { data } = await api.post<{ access_token: string }>('/api/auth/login', corps, {
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
   })
-  const { data: moi } = await api.get<Utilisateur>('/api/auth/me', {
-    headers: { Authorization: `Bearer ${data.access_token}` },
-  })
+  let moi: Utilisateur
+  try {
+    moi = (await api.get<Utilisateur>('/api/auth/me', {
+      headers: { Authorization: `Bearer ${data.access_token}` },
+    })).data
+  } catch (e: any) {
+    const status = e?.response?.status
+    const detail = e?.response?.data?.detail
+    throw new ErreurProfil(
+      `Identifiants acceptés, mais le profil n'a pas pu être chargé${status ? ` (erreur ${status}` : ''}` +
+      `${typeof detail === 'string' ? ` : ${detail}` : ''}${status ? ')' : ''}. Réessayez ou contactez votre responsable.`,
+    )
+  }
   if (moi.role !== 'CHAUFFEUR') {
     throw new AccesRefuse(
       "Cette application est réservée aux chauffeurs.\nUtilisez la plateforme web eFlotte pour la gestion du parc.",

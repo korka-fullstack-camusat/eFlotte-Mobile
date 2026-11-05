@@ -8,8 +8,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import PasswordInput from '../components/PasswordInput'
-import { AccesRefuse, connexion } from '../features/auth/api'
-import { messageErreur } from '../lib/http/api'
+import { AccesRefuse, connexion, ErreurProfil } from '../features/auth/api'
+import { BASE_URL, messageErreur } from '../lib/http/api'
 
 export default function LoginScreen() {
   const nav = useNavigation<any>()
@@ -27,10 +27,13 @@ export default function LoginScreen() {
       // Mot de passe initial (Camusat@2026) : à changer avant tout
       nav.reset({ index: 0, routes: [{ name: moi.doit_changer_mdp ? 'PremiereConnexion' : 'Main' }] })
     } catch (e: any) {
-      if (e instanceof AccesRefuse) setError(e.message)
-      else if (e?.response?.status === 401 || e?.response?.status === 400) setError('Identifiant ou mot de passe incorrect.')
-      else if (e?.response?.status === 403) setError('Compte désactivé. Contactez votre responsable.')
-      else setError(messageErreur(e, 'Erreur du serveur, réessayez dans un instant.'))
+      const status = e?.response?.status
+      if (e instanceof AccesRefuse || e instanceof ErreurProfil) setError(e.message)
+      else if (status === 401) {
+        setError('Identifiant ou mot de passe incorrect.\nVérifiez les majuscules : le mot de passe reçu par SMS est à recopier exactement.')
+      } else if (status === 403) setError(messageErreur(e, 'Compte désactivé. Contactez votre responsable.'))
+      else if (!e?.response) setError(`Serveur injoignable (${BASE_URL}). Vérifiez votre connexion internet.`)
+      else setError(messageErreur(e, `Erreur du serveur (${status}), réessayez dans un instant.`))
     } finally {
       setLoading(false)
     }
@@ -98,6 +101,7 @@ export default function LoginScreen() {
             <Text style={styles.aide}>
               Identifiants reçus par SMS. Mot de passe oublié : contactez votre responsable de flotte.
             </Text>
+            <Text style={styles.serveur}>Serveur : {BASE_URL.replace(/^https?:\/\//, '')}</Text>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -132,4 +136,5 @@ const styles = StyleSheet.create({
   submitBtn: { backgroundColor: BLUE, borderRadius: 16, paddingVertical: 12, marginTop: 4 },
   submitText: { color: '#fff', textAlign: 'center', fontWeight: '600' },
   aide: { textAlign: 'center', marginTop: 14, fontSize: 12, color: '#6b7280' },
+  serveur: { textAlign: 'center', marginTop: 6, fontSize: 11, color: '#9ca3af' },
 })
