@@ -213,7 +213,7 @@ function Formulaire({ modele, espace, vehicules, username, onEnvoye }: {
         type_rapport: 'INSPECTION',
         immatriculation: immatriculation.trim(),
         kilometrage: Number(kilometrage),
-        visite_technique: vtConnue ? null : visiteTechnique || null,
+        visite_technique: visiteTechnique || null,   // vide : le serveur garde la dernière connue
         reponses: { items, autres },
         commentaires,
         nom_instructeur: '',
@@ -287,18 +287,18 @@ function Formulaire({ modele, espace, vehicules, username, onEnvoye }: {
                 </Text>
               </View>
 
-              {/* Visite technique : demandée seulement si inconnue ou dépassée */}
-              {vtConnue ? (
-                <Text style={F.aide}>Visite technique valable jusqu’au <Text style={{ fontWeight: '800' }}>{formatDate(vtConnue)}</Text>.</Text>
-              ) : (
-                <View>
-                  <Text style={F.label}>
-                    Date de la visite technique{vehicule?.visite_technique ? ' (la dernière connue est dépassée)' : ''}
+              {/* Visite technique : toujours proposée ; la dernière connue est rappelée */}
+              <View>
+                <Text style={F.label}>Date de la visite technique</Text>
+                <ChampDate label="Date de la visite technique" valeur={visiteTechnique} onChange={setVisiteTechnique}
+                  erreur={tentative && !vtValide} />
+                {!!vehicule?.visite_technique && (
+                  <Text style={[F.aide, !vtConnue && { color: COLORS.amber700 }]}>
+                    {vtConnue ? 'Dernière connue : valable jusqu’au ' : 'Dernière connue dépassée : '}
+                    <Text style={{ fontWeight: '800' }}>{formatDate(vehicule.visite_technique)}</Text>
                   </Text>
-                  <ChampDate label="Date de la visite technique" valeur={visiteTechnique} onChange={setVisiteTechnique}
-                    erreur={tentative && !vtValide} />
-                </View>
-              )}
+                )}
+              </View>
             </View>
           ) : section ? (
             <View style={{ gap: 10 }}>
