@@ -106,16 +106,14 @@ export default function HomeTab() {
       refreshControl={<RefreshControl refreshing={espaceQ.isRefetching || notifQ.isRefetching}
         onRefresh={() => { void r1(); void r2() }} colors={[COLORS.blue900]} />}>
       <View style={H.entete}>
-        <View style={{ flex: 1 }}>
-          <Text style={shared.title} accessibilityRole="header" numberOfLines={1}>Bonjour {prenom} 👋</Text>
-          <Text style={shared.subtitle}>{aujourdhuiLong()}</Text>
-        </View>
+        <Text style={shared.title} accessibilityRole="header" numberOfLines={1}>Bonjour {prenom} 👋</Text>
         {!!plaque && (
-          <View style={H.plaque} accessibilityLabel={`Mon véhicule : ${plaque}`}>
-            <Car color={COLORS.blue900} size={15} />
-            <Text style={H.plaqueTexte}>{plaque}</Text>
+          <View style={H.plaque}>
+            <Car color={COLORS.blue900} size={16} />
+            <Text style={H.plaqueLabel}>Matricule véhicule : <Text style={H.plaqueTexte}>{plaque}</Text></Text>
           </View>
         )}
+        <Text style={shared.subtitle}>{aujourdhuiLong()}</Text>
       </View>
 
       {espaceQ.isLoading ? <Chargement /> : espaceQ.isError || !espace ? (
@@ -154,7 +152,7 @@ export default function HomeTab() {
             <View style={H.grille}>
               <Tuile label="Rapport checklist" Icone={ClipboardCheck} onPress={() => nav.navigate('NouveauRapport')} />
               <Tuile label="Signaler une panne" Icone={Wrench} onPress={() => nav.navigate('DemandeForm', { nature: 'PANNE' })} />
-              <Tuile label="Mes demandes" Icone={ClipboardList} onPress={() => nav.navigate('Demandes')} />
+              <Tuile label="Mes demandes" Icone={ClipboardList} onPress={() => nav.navigate('Historique', { onglet: 'demandes', t: Date.now() })} />
               <Tuile label="Historique" Icone={History} onPress={() => nav.navigate('Historique')} />
             </View>
           </View>
@@ -186,12 +184,10 @@ export default function HomeTab() {
 
 const H = StyleSheet.create({
   container: { paddingHorizontal: 16, paddingBottom: 32 },
-  entete: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingTop: 16, paddingBottom: 14 },
-  plaque: {
-    flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: COLORS.blue50,
-    borderWidth: 1, borderColor: COLORS.blue100, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 6,
-  },
-  plaqueTexte: { color: COLORS.blue900, fontWeight: '900', fontSize: 13, letterSpacing: 0.5 },
+  entete: { paddingTop: 16, paddingBottom: 14, gap: 4 },
+  plaque: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 },
+  plaqueLabel: { color: COLORS.text, fontWeight: '700', fontSize: 14 },
+  plaqueTexte: { color: COLORS.blue900, fontWeight: '900', letterSpacing: 0.5 },
   ok: {
     flexDirection: 'row', gap: 10, alignItems: 'center', borderRadius: 16, borderWidth: 1, padding: 14,
     backgroundColor: COLORS.green50, borderColor: '#A7F3D0',

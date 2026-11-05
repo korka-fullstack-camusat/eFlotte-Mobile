@@ -25,6 +25,6 @@ export const notifications = {
 export function cibleNotification(type: string | undefined, data?: Record<string, unknown> | null):
   { name: string; params?: object } {
   if (type === 'RELANCE' || data?.ecran === 'NouveauRapport') return { name: 'NouveauRapport' }
-  if (type === 'DEMANDE' || data?.demande_id) return { name: 'Main', params: { screen: 'Demandes' } }
+  if (type === 'DEMANDE' || data?.demande_id) return { name: 'Main', params: { screen: 'Historique', params: { onglet: 'demandes', t: Date.now() } } }
   return { name: 'Main', params: { screen: 'Accueil' } }
 }

@@ -8,12 +8,12 @@ import {
   ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View,
 } from 'react-native'
 
+import { ICONES_NATURE } from '../components/Demandes'
 import { toast } from '../components/ui/Toaster'
 import { COLORS } from '../design/theme'
 import { useSession } from '../features/auth/session'
 import { demandes, NATURES, type NatureDemande } from '../features/demandes/api'
 import { messageErreur } from '../lib/http/api'
-import { ICONES_NATURE } from './tabs/DemandesTab'
 
 function Champ({ label, erreur, ...props }: { label: string; erreur?: string } & React.ComponentProps<typeof TextInput>) {
   return (
@@ -55,7 +55,7 @@ export default function DemandeFormScreen() {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['mesDemandes'] })
       toast.success({ title: `Demande ${NATURES[nature].toLowerCase()} envoyée`, message: 'Le responsable flotte est prévenu.' })
-      nav.navigate('Main', { screen: 'Demandes' })
+      nav.navigate('Main', { screen: 'Historique', params: { onglet: 'demandes', t: Date.now() } })
     },
     onError: (e) => toast.error({ title: 'Envoi impossible', message: messageErreur(e) }),
   })
