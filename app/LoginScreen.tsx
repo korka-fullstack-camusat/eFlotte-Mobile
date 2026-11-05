@@ -3,7 +3,7 @@ import { useNavigation } from '@react-navigation/native'
 import { StatusBar } from 'expo-status-bar'
 import React, { type ComponentRef, useState } from 'react'
 import {
-  Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View,
+  Image, KeyboardAvoidingView, Pressable, ScrollView, StyleSheet, Text, TextInput, View,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
@@ -42,7 +42,7 @@ export default function LoginScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <StatusBar style="light" />
-      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardAvoidingView style={styles.flex} behavior="padding">
         <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
           <View style={styles.formCard}>
             <View style={styles.formHeaderRow}>
@@ -59,7 +59,7 @@ export default function LoginScreen() {
               <Text style={styles.label} nativeID="lbl-identifiant">Identifiant</Text>
               <TextInput
                 accessibilityLabelledBy="lbl-identifiant"
-                placeholder="ex : 771234567"
+                placeholder="Identifiant"
                 placeholderTextColor="#9aa7bd"
                 autoCapitalize="none"
                 autoCorrect={false}

@@ -1,5 +1,6 @@
 import { useNavigation } from '@react-navigation/native'
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text } from 'react-native'
+import { useRef, type ComponentRef } from 'react'
+import { KeyboardAvoidingView, ScrollView, StyleSheet, Text } from 'react-native'
 
 import MotDePasseForm from '../components/MotDePasseForm'
 import { toast } from '../components/ui/Toaster'
@@ -7,11 +8,13 @@ import { COLORS } from '../design/theme'
 
 export default function ChangePasswordScreen() {
   const nav = useNavigation<any>()
+  const defilement = useRef<ComponentRef<typeof ScrollView>>(null)
+  const afficherChamp = () => setTimeout(() => defilement.current?.scrollToEnd({ animated: true }), 300)
   return (
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView contentContainerStyle={S.container} keyboardShouldPersistTaps="handled">
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
+      <ScrollView ref={defilement} contentContainerStyle={S.container} keyboardShouldPersistTaps="handled">
         <Text style={S.titre} accessibilityRole="header">Changer le mot de passe</Text>
-        <MotDePasseForm onSucces={() => { toast.success({ title: 'Mot de passe modifié' }); nav.goBack() }} />
+        <MotDePasseForm onFocusChamp={afficherChamp} onSucces={() => { toast.success({ title: 'Mot de passe modifié' }); nav.goBack() }} />
       </ScrollView>
     </KeyboardAvoidingView>
   )
