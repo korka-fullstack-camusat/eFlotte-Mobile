@@ -187,7 +187,7 @@ const H = StyleSheet.create({
   notifSous: { color: COLORS.muted, fontSize: 12, fontWeight: '600' },
   point: { width: 9, height: 9, borderRadius: 5, backgroundColor: COLORS.red600 },
   grille: { flex: 1, gap: 12 },
-  rangee: { flex: 1, flexDirection: 'row', gap: 12, maxHeight: 220 },
+  rangee: { flex: 1, flexDirection: 'row', gap: 12, maxHeight: 140 },
   tuile: {
     flex: 1, minHeight: 96, backgroundColor: COLORS.blue50, borderRadius: 18,
     borderWidth: 1, borderColor: COLORS.blue100, padding: 14, gap: 10, justifyContent: 'space-between',
