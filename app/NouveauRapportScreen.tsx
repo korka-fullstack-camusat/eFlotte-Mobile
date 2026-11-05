@@ -24,7 +24,7 @@ import { useSession } from '../features/auth/session'
 import { inspections } from '../features/inspections/api'
 import { type Brouillon, ecrireBrouillon, lireBrouillon } from '../features/inspections/brouillon'
 import { aujourdhuiIso, formatDate, formatNombre } from '../features/inspections/format'
-import { PermissionRefusee, prendrePhoto } from '../features/inspections/photo'
+import { PermissionRefusee, photoEnAttente, prendrePhoto } from '../features/inspections/photo'
 import type { ChecklistModele, MonEspace, PhotoLocale, ReponseItem, VehiculeMini } from '../features/inspections/types'
 import { messageErreur } from '../lib/http/api'
 
@@ -107,6 +107,18 @@ function Formulaire({ modele, espace, vehicules, username, onEnvoye }: {
         if (b.immatriculation) setImmatriculation(b.immatriculation)
         setKilometrage(b.kilometrage); setVisiteTechnique(b.visite_technique)
         setItems(b.items ?? {}); setAutres(b.autres ?? {}); setCommentaires(b.commentaires ?? '')
+        if (b.photos) setPhotos(b.photos)
+        // L'app a été fermée par Android pendant la prise de vue : on récupère la photo
+        if (b.photoAttendue) {
+          const position = b.photoAttendue
+          void photoEnAttente().then((p) => {
+            if (!actif) return
+            if (p) {
+              setPhotos((prev) => ({ ...prev, [position]: p }))
+              toast.success({ title: 'Photo récupérée', message: 'Vous pouvez continuer votre checklist.' })
+            }
+          })
+        }
       }
       setPret(true)
     })
@@ -115,9 +127,9 @@ function Formulaire({ modele, espace, vehicules, username, onEnvoye }: {
 
   useEffect(() => {
     if (!pret) return
-    const b: Brouillon = { etape, immatriculation, kilometrage, visite_technique: visiteTechnique, items, autres, commentaires }
+    const b: Brouillon = { etape, immatriculation, kilometrage, visite_technique: visiteTechnique, items, autres, commentaires, photos }
     void ecrireBrouillon(username, b)
-  }, [pret, username, etape, immatriculation, kilometrage, visiteTechnique, items, autres, commentaires])
+  }, [pret, username, etape, immatriculation, kilometrage, visiteTechnique, items, autres, commentaires, photos])
 
   const etapes = useMemo(() => [
     { cle: 'infos', titre: 'Véhicule et kilométrage' },
@@ -174,16 +186,22 @@ function Formulaire({ modele, espace, vehicules, username, onEnvoye }: {
   const photographier = async (position: string) => {
     setPhotoEnCours(position)
     try {
+      // Tout est enregistré avant d'ouvrir l'appareil photo : Android peut fermer l'app pendant la prise de vue
+      await ecrireBrouillon(username, {
+        etape, immatriculation, kilometrage, visite_technique: visiteTechnique, items, autres, commentaires, photos,
+        photoAttendue: position,
+      })
       const p = await prendrePhoto()
       if (p) setPhotos((prev) => ({ ...prev, [position]: p }))
     } catch (e) {
       toast.error({ title: 'Photo impossible', message: e instanceof PermissionRefusee ? e.message : 'Réessayez.' })
     } finally {
       setPhotoEnCours(null)
+      setPhotos((prev) => ({ ...prev }))   // réenregistre le brouillon sans « photo attendue »
     }
   }
 
-  // Quitter en cours de saisie : les réponses restent en brouillon, pas les photos ni la signature
+  // Quitter en cours de saisie : les réponses et les photos restent en brouillon, pas la signature
   const quitter = useCallback(() => {
     const commence = Object.keys(items).length > 0 || Object.keys(photos).length > 0 || kilometrage !== ''
     if (!commence || envoi) { if (!envoi) nav.goBack(); return }

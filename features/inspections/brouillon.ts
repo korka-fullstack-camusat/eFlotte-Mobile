@@ -1,8 +1,9 @@
-// Les réponses sont gardées sur le téléphone si l'app est fermée en cours de saisie.
-// Photos et signature ne le sont pas (fichiers temporaires / trop lourds).
+// Les réponses et les photos déjà prises sont gardées sur le téléphone si l'app est fermée
+// en cours de saisie (y compris par Android pendant que l'appareil photo est ouvert).
+// La signature ne l'est pas.
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
-import type { ReponseItem } from './types'
+import type { PhotoLocale, ReponseItem } from './types'
 
 export interface Brouillon {
   etape: number
@@ -12,6 +13,9 @@ export interface Brouillon {
   items: Record<string, ReponseItem>
   autres: Record<string, string>
   commentaires: string
+  photos?: Record<string, PhotoLocale>
+  /** Appareil photo ouvert pour cette case : si l'app redémarre, on rouvre la checklist et on récupère la photo */
+  photoAttendue?: string | null
 }
 
 const cle = (username: string) => `eflotte.brouillon.${username}`

@@ -14,7 +14,24 @@ export async function prendrePhoto(): Promise<PhotoLocale | null> {
   if (!perm.granted) throw new PermissionRefusee("L'accès à l'appareil photo est refusé. Autorisez-le dans les réglages du téléphone.")
   const res = await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], quality: 0.8, exif: false })
   if (res.canceled || !res.assets?.[0]) return null
-  const a = res.assets[0]
+  return reduire(res.assets[0])
+}
+
+/**
+ * Android ferme parfois l'application pendant que l'appareil photo est ouvert (mémoire).
+ * Au redémarrage, la photo prise est récupérée ici.
+ */
+export async function photoEnAttente(): Promise<PhotoLocale | null> {
+  try {
+    const res = await ImagePicker.getPendingResultAsync()
+    if (!res || !('assets' in res) || res.canceled || !res.assets?.[0]) return null
+    return await reduire(res.assets[0])
+  } catch {
+    return null
+  }
+}
+
+async function reduire(a: ImagePicker.ImagePickerAsset): Promise<PhotoLocale> {
   const grand = Math.max(a.width || 0, a.height || 0)
   const ctx = ImageManipulator.manipulate(a.uri)
   if (grand > COTE_MAX) ctx.resize(a.width >= a.height ? { width: COTE_MAX } : { height: COTE_MAX })

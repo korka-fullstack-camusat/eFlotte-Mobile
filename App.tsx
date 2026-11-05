@@ -19,6 +19,7 @@ import { AppHeaderBar } from './components/AppHeader'
 import { ToasterProvider } from './components/ui/Toaster'
 import UpdateBanner from './components/UpdateBanner'
 import { profil } from './features/auth/api'
+import { lireBrouillon } from './features/inspections/brouillon'
 import './features/notifications/localAlerts'   // définit la tâche de fond (vérification app fermée)
 import { useSession } from './features/auth/session'
 import { navigationRef } from './lib/navigationRef'
@@ -68,7 +69,15 @@ function SplashScreen() {
         clearTimeout(delai)
         if (moi.role !== 'CHAUFFEUR') { await useSession.getState().fermer(); return aller('Login') }
         await useSession.getState().ouvrir(token, moi)
-        aller(moi.doit_changer_mdp ? 'PremiereConnexion' : 'Main')
+        if (moi.doit_changer_mdp) return aller('PremiereConnexion')
+        // Android a fermé l'app pendant une prise de photo : on rouvre la checklist en cours
+        const brouillon = await lireBrouillon(moi.username)
+        if (brouillon?.photoAttendue && !fini) {
+          fini = true
+          nav.reset({ index: 1, routes: [{ name: 'Main' }, { name: 'NouveauRapport' }] })
+          return
+        }
+        aller('Main')
       } catch (e: any) {
         clearTimeout(delai)
         const status = e?.response?.status
