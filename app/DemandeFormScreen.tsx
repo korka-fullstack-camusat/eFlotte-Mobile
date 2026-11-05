@@ -65,6 +65,7 @@ export default function DemandeFormScreen() {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['mesDemandes'] })
       toast.success({ title: `Demande ${NATURES[nature].toLowerCase()} envoyée`, message: 'Le responsable flotte est prévenu.' })
+      nav.popToTop()   // l'onglet Demandes revient à la liste des choix
       nav.navigate('Main', { screen: 'Historique', params: { onglet: 'demandes', t: Date.now() } })
     },
     onError: (e) => toast.error({ title: 'Envoi impossible', message: messageErreur(e) }),

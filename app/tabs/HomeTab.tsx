@@ -115,7 +115,7 @@ export default function HomeTab() {
       {espaceQ.isLoading ? <Chargement /> : espaceQ.isError || !espace ? (
         <Erreur texte="Impossible de charger votre espace. Vérifiez votre connexion." onRetry={r1} />
       ) : (
-        <View style={{ gap: 22 }}>
+        <View style={{ gap: 22, flex: 1 }}>
           {espace.envoye_cette_semaine && (
             <View style={H.ok}>
               <CheckCircle2 color={COLORS.green600} size={20} />
@@ -143,13 +143,18 @@ export default function HomeTab() {
           </View>
 
           {/* ── Accès rapide ── */}
-          <View style={{ gap: 10 }}>
+          <View style={{ gap: 10, flex: 1 }}>
             <Text style={shared.section}>⚡ Accès rapide</Text>
+            {/* Les tuiles s'agrandissent pour occuper le bas de l'écran quand il y a peu de notifications */}
             <View style={H.grille}>
-              <Tuile label="Rapport checklist" Icone={ClipboardCheck} onPress={() => nav.navigate('NouveauRapport')} />
-              <Tuile label="Signaler une panne" Icone={Wrench} onPress={() => nav.navigate('DemandeForm', { nature: 'PANNE' })} />
-              <Tuile label="Mes demandes" Icone={ClipboardList} onPress={() => nav.navigate('Historique', { onglet: 'demandes', t: Date.now() })} />
-              <Tuile label="Historique" Icone={History} onPress={() => nav.navigate('Historique')} />
+              <View style={H.rangee}>
+                <Tuile label="Rapport checklist" Icone={ClipboardCheck} onPress={() => nav.navigate('NouveauRapport')} />
+                <Tuile label="Signaler une panne" Icone={Wrench} onPress={() => nav.navigate('Demandes', { screen: 'DemandeForm', params: { nature: 'PANNE' }, initial: false })} />
+              </View>
+              <View style={H.rangee}>
+                <Tuile label="Mes demandes" Icone={ClipboardList} onPress={() => nav.navigate('Historique', { onglet: 'demandes', t: Date.now() })} />
+                <Tuile label="Historique" Icone={History} onPress={() => nav.navigate('Historique')} />
+              </View>
             </View>
           </View>
 
@@ -160,7 +165,7 @@ export default function HomeTab() {
 }
 
 const H = StyleSheet.create({
-  container: { paddingHorizontal: 16, paddingBottom: 32 },
+  container: { paddingHorizontal: 16, paddingBottom: 20, flexGrow: 1 },
   entete: { paddingTop: 16, paddingBottom: 14, gap: 4 },
   plaqueLabel: { color: COLORS.text, fontWeight: '700', fontSize: 18, marginTop: 2 },
   plaqueTexte: { color: COLORS.blue900, fontWeight: '900', letterSpacing: 0.5 },
@@ -181,9 +186,10 @@ const H = StyleSheet.create({
   notifTitre: { color: COLORS.text, fontWeight: '800', fontSize: 14 },
   notifSous: { color: COLORS.muted, fontSize: 12, fontWeight: '600' },
   point: { width: 9, height: 9, borderRadius: 5, backgroundColor: COLORS.red600 },
-  grille: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  grille: { flex: 1, gap: 12 },
+  rangee: { flex: 1, flexDirection: 'row', gap: 12, maxHeight: 220 },
   tuile: {
-    flexBasis: '47%', flexGrow: 1, minHeight: 96, backgroundColor: COLORS.blue50, borderRadius: 18,
+    flex: 1, minHeight: 96, backgroundColor: COLORS.blue50, borderRadius: 18,
     borderWidth: 1, borderColor: COLORS.blue100, padding: 14, gap: 10, justifyContent: 'space-between',
   },
   tuileIcone: { width: 40, height: 40, justifyContent: 'center' },

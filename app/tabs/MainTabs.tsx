@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { AppHeaderBar } from '../../components/AppHeader'
 import { COLORS } from '../../design/theme'
 import { useNotificationsTelephone } from '../../features/notifications/useNotificationsTelephone'
-import DemandesTab from './DemandesTab'
+import DemandesStack from './DemandesStack'
 import HistoriqueTab from './HistoriqueTab'
 import HomeTab from './HomeTab'
 import ProfilTab from './ProfilTab'
@@ -31,8 +31,8 @@ export default function MainTabs() {
     >
       <Tab.Screen name="Accueil" component={HomeTab}
         options={{ tabBarIcon: ({ color, size }) => <Home color={color} size={size} /> }} />
-      <Tab.Screen name="Demandes" component={DemandesTab}
-        options={{ tabBarIcon: ({ color, size }) => <ClipboardList color={color} size={size} /> }} />
+      <Tab.Screen name="Demandes" component={DemandesStack}
+        options={{ headerShown: false, tabBarIcon: ({ color, size }) => <ClipboardList color={color} size={size} /> }} />
       <Tab.Screen name="Historique" component={HistoriqueTab}
         options={{ tabBarIcon: ({ color, size }) => <History color={color} size={size} /> }} />
       <Tab.Screen name="Profil" component={ProfilTab}
