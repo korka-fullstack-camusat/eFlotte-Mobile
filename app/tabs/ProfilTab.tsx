@@ -9,6 +9,7 @@ import { initiales } from '../../components/AppHeader'
 import { Chargement, Erreur } from '../../components/Etats'
 import { COLORS } from '../../design/theme'
 import { useSession } from '../../features/auth/session'
+import { seDeconnecter } from '../../features/notifications/push'
 import { inspections } from '../../features/inspections/api'
 import { libelleVersion } from '../../features/version'
 import { resetTo } from '../../lib/navigationRef'
@@ -33,7 +34,7 @@ export default function ProfilTab() {
   const nom = espace?.full_name || espace?.username || ''
 
   const deconnexion = () => {
-    const go = async () => { await useSession.getState().fermer(); resetTo('Login') }
+    const go = async () => { await seDeconnecter(); resetTo('Login') }
     if (Platform.OS === 'web') { void go(); return }
     Alert.alert('Se déconnecter ?', 'Vous devrez saisir à nouveau votre identifiant et votre mot de passe.', [
       { text: 'Annuler', style: 'cancel' },

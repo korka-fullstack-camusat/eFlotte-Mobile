@@ -10,6 +10,7 @@ import { ActivityIndicator, Image, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 
 import ChangePasswordScreen from './app/ChangePasswordScreen'
+import DemandeFormScreen from './app/DemandeFormScreen'
 import LoginScreen from './app/LoginScreen'
 import NouveauRapportScreen from './app/NouveauRapportScreen'
 import PremiereConnexionScreen from './app/PremiereConnexionScreen'
@@ -19,6 +20,7 @@ import { AppHeaderBar } from './components/AppHeader'
 import { ToasterProvider } from './components/ui/Toaster'
 import UpdateBanner from './components/UpdateBanner'
 import { profil } from './features/auth/api'
+import './features/notifications/localAlerts'   // définit la tâche de fond (vérification app fermée)
 import { useSession } from './features/auth/session'
 import { navigationRef } from './lib/navigationRef'
 import { queryClient } from './lib/query'
@@ -102,6 +104,7 @@ function Root() {
       {/* Formulaire plein écran : son propre en-tête (étape + progression + fermer) */}
       <Stack.Screen name="NouveauRapport" component={NouveauRapportScreen} options={{ headerShown: false, gestureEnabled: false }} />
       <Stack.Screen name="RapportDetail" component={RapportDetailScreen} />
+      <Stack.Screen name="DemandeForm" component={DemandeFormScreen} />
       <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
     </Stack.Navigator>
   )

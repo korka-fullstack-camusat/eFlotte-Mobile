@@ -1,13 +1,14 @@
 // En-tête commun (style Inventory) : [retour] logo + « eFlotte-Camusat » à gauche,
-// plaque du véhicule + avatar (menu) à droite.
+// avatar (menu) à droite. La plaque du véhicule est affichée sur l'accueil, à côté du bonjour.
 import { useIsFocused, useNavigation, useNavigationState } from '@react-navigation/native'
 import { StatusBar } from 'expo-status-bar'
-import { Car, ChevronLeft } from 'lucide-react-native'
+import { ChevronLeft } from 'lucide-react-native'
 import { useState } from 'react'
 import { Image, Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useSession } from '../features/auth/session'
+import { seDeconnecter } from '../features/notifications/push'
 import { resetTo } from '../lib/navigationRef'
 
 export function initiales(nom: string) {
@@ -24,7 +25,7 @@ export function HeaderUserMenu() {
   const allerMdp = () => { setOpen(false); nav.navigate('ChangePassword') }
   const deconnexion = async () => {
     setOpen(false)
-    await useSession.getState().fermer()
+    await seDeconnecter()
     resetTo('Login')
   }
 
@@ -85,18 +86,6 @@ export function HeaderLeft({ canGoBack }: { canGoBack?: boolean }) {
   )
 }
 
-/** Plaque du véhicule attribué (sur fond blanc, comme sur le web). */
-function PlaqueVehicule() {
-  const plaque = useSession((s) => s.utilisateur?.vehicule_plaque)
-  if (!plaque) return null
-  return (
-    <View style={headerStyles.plaque} accessibilityLabel={`Mon véhicule : ${plaque}`}>
-      <Car color="#0f3b82" size={14} />
-      <Text style={headerStyles.plaqueText}>{plaque}</Text>
-    </View>
-  )
-}
-
 /** En-tête complet dessiné en JS (bleu Camusat). */
 export function AppHeaderBar({ back }: { back?: unknown }) {
   const insets = useSafeAreaInsets()
@@ -105,7 +94,6 @@ export function AppHeaderBar({ back }: { back?: unknown }) {
       <View style={headerStyles.barRow}>
         <HeaderLeft canGoBack={!!back} />
         <View style={headerStyles.rightWrap}>
-          <PlaqueVehicule />
           <HeaderUserMenu />
         </View>
       </View>
@@ -124,11 +112,6 @@ export const headerStyles = StyleSheet.create({
     backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center',
   },
   appTitle: { fontSize: 16, fontWeight: '800', color: '#ffffff', letterSpacing: 0.2, flexShrink: 1 },
-  plaque: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    backgroundColor: '#fff', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4,
-  },
-  plaqueText: { color: '#0f3b82', fontWeight: '900', fontSize: 12, letterSpacing: 0.5 },
   avatar: {
     width: 32, height: 32, borderRadius: 16,
     backgroundColor: 'rgba(255,255,255,0.18)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.7)',

@@ -1,8 +1,11 @@
-// Accueil : bonjour, rappel si la checklist de la semaine est attendue, bouton
-// « Nouveau rapport », puis les 3 derniers rapports envoyés.
-import { useNavigation } from '@react-navigation/native'
-import { useQuery } from '@tanstack/react-query'
-import { BellRing, CheckCircle2, ChevronRight, Plus } from 'lucide-react-native'
+// Accueil (style Inventory) : bonjour + plaque du véhicule, notifications reçues
+// (relances, suivi des demandes, checklist attendue), accès rapide, derniers rapports.
+import { useFocusEffect, useNavigation } from '@react-navigation/native'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import {
+  BellRing, Car, CheckCircle2, ChevronRight, ClipboardCheck, ClipboardList, History, Inbox, Info, Wrench,
+} from 'lucide-react-native'
+import { useCallback } from 'react'
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native'
 
 import { Chargement, Erreur, Vide } from '../../components/Etats'
@@ -11,58 +14,158 @@ import { COLORS } from '../../design/theme'
 import { useSession } from '../../features/auth/session'
 import { inspections } from '../../features/inspections/api'
 import { aujourdhuiLong, formatDate } from '../../features/inspections/format'
+import { cibleNotification, notifications, type NotificationChauffeur } from '../../features/notifications/api'
 import { S as shared } from './shared'
+
+type Carte = {
+  id: string
+  titre: string
+  sousTitre?: string
+  type: 'RELANCE' | 'DEMANDE' | 'INFO' | 'CHECKLIST'
+  nonLue: boolean
+  aller: () => void
+}
+
+const ICONES = { RELANCE: BellRing, DEMANDE: Inbox, INFO: Info, CHECKLIST: ClipboardCheck }
+
+function CarteNotification({ c }: { c: Carte }) {
+  const Icone = ICONES[c.type]
+  const alerte = c.type === 'RELANCE' || c.type === 'CHECKLIST'
+  return (
+    <Pressable onPress={c.aller} accessibilityRole="button" accessibilityLabel={`${c.titre}${c.sousTitre ? `. ${c.sousTitre}` : ''}`}
+      style={({ pressed }) => [H.notif, pressed && { opacity: 0.85 }]}>
+      <View style={[H.notifIcone, alerte && { backgroundColor: COLORS.amber50 }]}>
+        <Icone color={alerte ? COLORS.amber700 : COLORS.blue900} size={20} />
+      </View>
+      <View style={{ flex: 1, gap: 2 }}>
+        <Text style={H.notifTitre} numberOfLines={2}>{c.titre}</Text>
+        {!!c.sousTitre && <Text style={H.notifSous} numberOfLines={2}>{c.sousTitre}</Text>}
+      </View>
+      {c.nonLue && <View style={H.point} accessibilityLabel="Non lue" />}
+      <ChevronRight color={COLORS.blue900} size={18} />
+    </Pressable>
+  )
+}
+
+function Tuile({ label, Icone, onPress }: { label: string; Icone: typeof Car; onPress: () => void }) {
+  return (
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={label}
+      style={({ pressed }) => [H.tuile, pressed && { opacity: 0.85 }]}>
+      <View style={H.tuileIcone}><Icone color={COLORS.blue900} size={22} /></View>
+      <Text style={H.tuileTexte} numberOfLines={2}>{label}</Text>
+    </Pressable>
+  )
+}
 
 export default function HomeTab() {
   const nav = useNavigation<any>()
+  const qc = useQueryClient()
   const utilisateur = useSession((s) => s.utilisateur)
   const prenom = (utilisateur?.full_name || utilisateur?.username || '').split(' ')[0]
-  const { data: espace, isLoading, isError, refetch, isRefetching } = useQuery({ queryKey: ['moi'], queryFn: inspections.moi })
+  const espaceQ = useQuery({ queryKey: ['moi'], queryFn: inspections.moi })
+  const notifQ = useQuery({ queryKey: ['notifications'], queryFn: () => notifications.liste(30) })
+  const plaque = espaceQ.data?.vehicule_plaque ?? utilisateur?.vehicule_plaque
+
+  // Retour sur l'accueil : on relit (une relance a pu arriver)
+  const { refetch: r1 } = espaceQ
+  const { refetch: r2 } = notifQ
+  useFocusEffect(useCallback(() => { void r1(); void r2() }, [r1, r2]))
+
+  const lues = useMutation({
+    mutationFn: notifications.marquerLues,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['notifications'] }),
+  })
+
+  const ouvrir = (n: NotificationChauffeur) => {
+    if (!n.lue_at) lues.mutate()
+    const c = cibleNotification(n.type, n.data)
+    nav.navigate(c.name, c.params)
+  }
+
+  const espace = espaceQ.data
+  const cartes: Carte[] = []
+  if (espace && !espace.envoye_cette_semaine) {
+    cartes.push({
+      id: 'checklist', type: 'CHECKLIST', nonLue: true,
+      titre: 'Checklist de la semaine à envoyer',
+      sousTitre: plaque ? `Véhicule ${plaque}` : 'Touchez pour remplir le rapport.',
+      aller: () => nav.navigate('NouveauRapport'),
+    })
+  }
+  for (const n of (notifQ.data?.items ?? []).slice(0, 5)) {
+    cartes.push({
+      id: String(n.id), type: n.type, nonLue: !n.lue_at, titre: n.titre,
+      sousTitre: [n.message, formatDate(n.created_at, true)].filter(Boolean).join(' · '),
+      aller: () => ouvrir(n),
+    })
+  }
+  const nonLues = (notifQ.data?.non_lues ?? 0) + (espace && !espace.envoye_cette_semaine ? 1 : 0)
 
   return (
     <ScrollView style={shared.screen} contentContainerStyle={H.container}
-      refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={() => { void refetch() }} colors={[COLORS.blue900]} />}>
-      <View style={shared.head}>
-        <Text style={shared.title} accessibilityRole="header">Bonjour {prenom} 👋</Text>
-        <Text style={shared.subtitle}>{aujourdhuiLong()}</Text>
+      refreshControl={<RefreshControl refreshing={espaceQ.isRefetching || notifQ.isRefetching}
+        onRefresh={() => { void r1(); void r2() }} colors={[COLORS.blue900]} />}>
+      <View style={H.entete}>
+        <View style={{ flex: 1 }}>
+          <Text style={shared.title} accessibilityRole="header" numberOfLines={1}>Bonjour {prenom} 👋</Text>
+          <Text style={shared.subtitle}>{aujourdhuiLong()}</Text>
+        </View>
+        {!!plaque && (
+          <View style={H.plaque} accessibilityLabel={`Mon véhicule : ${plaque}`}>
+            <Car color={COLORS.blue900} size={15} />
+            <Text style={H.plaqueTexte}>{plaque}</Text>
+          </View>
+        )}
       </View>
 
-      {isLoading ? <Chargement /> : isError || !espace ? (
-        <Erreur texte="Impossible de charger votre espace. Vérifiez votre connexion." onRetry={refetch} />
+      {espaceQ.isLoading ? <Chargement /> : espaceQ.isError || !espace ? (
+        <Erreur texte="Impossible de charger votre espace. Vérifiez votre connexion." onRetry={r1} />
       ) : (
-        <View style={{ gap: 18 }}>
-          {espace.envoye_cette_semaine ? (
-            <View style={[H.bandeau, H.ok]}>
+        <View style={{ gap: 22 }}>
+          {espace.envoye_cette_semaine && (
+            <View style={H.ok}>
               <CheckCircle2 color={COLORS.green600} size={20} />
-              <Text style={[H.bandeauTitre, { color: '#065F46' }]}>Checklist de la semaine envoyée. Merci !</Text>
+              <Text style={H.okTexte}>Checklist de la semaine envoyée. Merci !</Text>
             </View>
-          ) : espace.relances.length > 0 ? (
-            <View style={[H.bandeau, H.rappel]} accessibilityRole="alert">
-              <BellRing color={COLORS.amber700} size={20} />
-              <View style={{ flex: 1, gap: 4 }}>
-                <Text style={[H.bandeauTitre, { color: '#92400E' }]}>Rappel : votre checklist est attendue</Text>
-                {espace.relances.slice(0, 2).map((r) => (
-                  <View key={r.id}>
-                    <Text style={H.rappelTexte}>{r.message || 'Merci d’envoyer votre checklist de la semaine.'}</Text>
-                    <Text style={H.rappelMeta}>{r.envoye_par ? `${r.envoye_par} · ` : ''}{formatDate(r.created_at, true)}</Text>
-                  </View>
-                ))}
+          )}
+
+          {/* ── Notifications ── */}
+          <View style={{ gap: 10 }}>
+            <View style={H.ligneTitre}>
+              <View style={H.titreAvecBadge}>
+                <Text style={shared.section}>🔔 Notifications</Text>
+                {nonLues > 0 && <View style={H.badge}><Text style={H.badgeTexte}>{nonLues}</Text></View>}
               </View>
+              {(notifQ.data?.non_lues ?? 0) > 0 && (
+                <Pressable onPress={() => lues.mutate()} hitSlop={10} accessibilityRole="button">
+                  <Text style={H.lien}>Tout marquer lu</Text>
+                </Pressable>
+              )}
             </View>
-          ) : null}
+            {notifQ.isLoading && cartes.length === 0 ? <Chargement texte="Chargement des notifications…" /> :
+              cartes.length === 0 ? <Vide texte="Aucune notification pour le moment." /> :
+                cartes.map((c) => <CarteNotification key={c.id} c={c} />)}
+            {notifQ.isError && <Text style={H.notifSous}>Notifications indisponibles hors connexion.</Text>}
+          </View>
 
-          <Pressable onPress={() => nav.navigate('NouveauRapport')} accessibilityRole="button"
-            style={({ pressed }) => [H.nouveau, pressed && { opacity: 0.9 }]}>
-            <Plus color="#fff" size={22} />
-            <Text style={H.nouveauText}>Nouveau rapport</Text>
-          </Pressable>
+          {/* ── Accès rapide ── */}
+          <View style={{ gap: 10 }}>
+            <Text style={shared.section}>⚡ Accès rapide</Text>
+            <View style={H.grille}>
+              <Tuile label="Rapport checklist" Icone={ClipboardCheck} onPress={() => nav.navigate('NouveauRapport')} />
+              <Tuile label="Signaler une panne" Icone={Wrench} onPress={() => nav.navigate('DemandeForm', { nature: 'PANNE' })} />
+              <Tuile label="Mes demandes" Icone={ClipboardList} onPress={() => nav.navigate('Demandes')} />
+              <Tuile label="Historique" Icone={History} onPress={() => nav.navigate('Historique')} />
+            </View>
+          </View>
 
+          {/* ── Derniers rapports ── */}
           <View style={{ gap: 10 }}>
             <View style={H.ligneTitre}>
               <Text style={shared.section}>Derniers rapports envoyés</Text>
               {espace.derniers_rapports.length > 0 && (
                 <Pressable onPress={() => nav.navigate('Historique')} accessibilityRole="link" hitSlop={10} style={H.voirPlus}>
-                  <Text style={H.voirPlusText}>Voir plus</Text>
+                  <Text style={H.lien}>Voir plus</Text>
                   <ChevronRight color={COLORS.blue900} size={16} />
                 </Pressable>
               )}
@@ -83,19 +186,36 @@ export default function HomeTab() {
 
 const H = StyleSheet.create({
   container: { paddingHorizontal: 16, paddingBottom: 32 },
-  bandeau: { flexDirection: 'row', gap: 10, borderRadius: 16, borderWidth: 1, padding: 14, alignItems: 'flex-start' },
-  ok: { backgroundColor: COLORS.green50, borderColor: '#A7F3D0' },
-  rappel: { backgroundColor: COLORS.amber50, borderColor: COLORS.amber200 },
-  bandeauTitre: { fontWeight: '800', fontSize: 14, flexShrink: 1 },
-  rappelTexte: { color: '#92400E', fontSize: 13 },
-  rappelMeta: { color: '#B45309', fontSize: 12, opacity: 0.85 },
-  nouveau: {
-    minHeight: 58, borderRadius: 18, backgroundColor: COLORS.blue900,
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 8, elevation: 3,
+  entete: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingTop: 16, paddingBottom: 14 },
+  plaque: {
+    flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: COLORS.blue50,
+    borderWidth: 1, borderColor: COLORS.blue100, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 6,
   },
-  nouveauText: { color: '#fff', fontWeight: '900', fontSize: 16 },
+  plaqueTexte: { color: COLORS.blue900, fontWeight: '900', fontSize: 13, letterSpacing: 0.5 },
+  ok: {
+    flexDirection: 'row', gap: 10, alignItems: 'center', borderRadius: 16, borderWidth: 1, padding: 14,
+    backgroundColor: COLORS.green50, borderColor: '#A7F3D0',
+  },
+  okTexte: { color: '#065F46', fontWeight: '800', fontSize: 14, flexShrink: 1 },
   ligneTitre: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  titreAvecBadge: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  badge: { minWidth: 22, height: 22, borderRadius: 11, backgroundColor: COLORS.red600, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6 },
+  badgeTexte: { color: '#fff', fontWeight: '900', fontSize: 12 },
+  notif: {
+    flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: '#fff',
+    borderWidth: 1, borderColor: COLORS.border, borderRadius: 16, padding: 12,
+  },
+  notifIcone: { width: 42, height: 42, borderRadius: 12, backgroundColor: COLORS.blue50, alignItems: 'center', justifyContent: 'center' },
+  notifTitre: { color: COLORS.text, fontWeight: '800', fontSize: 14 },
+  notifSous: { color: COLORS.muted, fontSize: 12, fontWeight: '600' },
+  point: { width: 9, height: 9, borderRadius: 5, backgroundColor: COLORS.red600 },
+  grille: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  tuile: {
+    flexBasis: '47%', flexGrow: 1, minHeight: 96, backgroundColor: COLORS.blue50, borderRadius: 18,
+    borderWidth: 1, borderColor: COLORS.blue100, padding: 14, gap: 10, justifyContent: 'space-between',
+  },
+  tuileIcone: { width: 40, height: 40, borderRadius: 12, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' },
+  tuileTexte: { color: COLORS.blue900, fontWeight: '900', fontSize: 14 },
   voirPlus: { flexDirection: 'row', alignItems: 'center' },
-  voirPlusText: { color: COLORS.blue900, fontWeight: '800' },
+  lien: { color: COLORS.blue900, fontWeight: '800' },
 })
