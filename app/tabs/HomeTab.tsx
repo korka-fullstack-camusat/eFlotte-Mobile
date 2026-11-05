@@ -190,9 +190,9 @@ const H = StyleSheet.create({
   rangee: { flex: 1, flexDirection: 'row', gap: 12, maxHeight: 140 },
   tuile: {
     flex: 1, minHeight: 96, backgroundColor: COLORS.blue50, borderRadius: 18,
-    borderWidth: 1, borderColor: COLORS.blue100, padding: 14, gap: 10, justifyContent: 'space-between',
+    borderWidth: 1, borderColor: COLORS.blue100, padding: 14, gap: 8, alignItems: 'center', justifyContent: 'center',
   },
-  tuileIcone: { width: 40, height: 40, justifyContent: 'center' },
-  tuileTexte: { color: COLORS.blue900, fontWeight: '900', fontSize: 14 },
+  tuileIcone: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
+  tuileTexte: { color: COLORS.blue900, fontWeight: '900', fontSize: 14, textAlign: 'center' },
   lien: { color: COLORS.blue900, fontWeight: '800' },
 })

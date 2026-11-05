@@ -1,19 +1,21 @@
 // Nouveau rapport : la checklist papier « INSPECTION/RESTITUTION D'UN VÉHICULE », étape par étape,
-// comme sur la plateforme web. Véhicule, chauffeur et filiale du compte ne sont jamais redemandés.
+// comme sur la plateforme web. Première page : immatriculation (préremplie, modifiable), kilométrage
+// et visite technique (calendrier). Chauffeur et filiale viennent du compte, jamais redemandés.
 import { useFocusEffect, useNavigation } from '@react-navigation/native'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Image } from 'expo-image'
 import {
-  AlertTriangle, Camera, Car, CheckCheck, ChevronLeft, ChevronRight, RotateCcw, Send, X,
+  AlertTriangle, Camera, CheckCheck, ChevronLeft, ChevronRight, RotateCcw, Send, X,
 } from 'lucide-react-native'
 import { type ComponentRef, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
-  ActivityIndicator, Alert, BackHandler, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView,
+  ActivityIndicator, Alert, BackHandler, KeyboardAvoidingView, Platform, Pressable, ScrollView,
   StyleSheet, Text, TextInput, View,
 } from 'react-native'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { StatusBar } from 'expo-status-bar'
 
+import ChampDate from '../components/ChampDate'
 import { Chargement, Erreur } from '../components/Etats'
 import SignaturePad from '../components/SignaturePad'
 import { toast } from '../components/ui/Toaster'
@@ -49,50 +51,6 @@ function Choix({ options, valeur, negative, onChange, label }: {
 }
 
 /* ---------- Sélecteur de véhicule (premier rapport seulement) ---------- */
-function ChoixVehicule({ vehicules, valeur, onChange }: { vehicules: VehiculeMini[] | undefined; valeur: string; onChange: (p: string) => void }) {
-  const [ouvert, setOuvert] = useState(false)
-  const [recherche, setRecherche] = useState('')
-  const liste = (vehicules ?? []).filter((v) =>
-    `${v.plaque_immatriculation} ${v.marque ?? ''} ${v.modele ?? ''}`.toLowerCase().includes(recherche.trim().toLowerCase()))
-  return (
-    <>
-      <Pressable onPress={() => setOuvert(true)} disabled={!vehicules} accessibilityRole="button"
-        style={({ pressed }) => [F.input, F.selecteur, pressed && { opacity: 0.85 }]}>
-        <Text style={{ color: valeur ? COLORS.text : '#9aa7bd', fontWeight: '700' }}>
-          {valeur || (vehicules ? 'Choisir le véhicule' : 'Chargement…')}
-        </Text>
-        <ChevronRight color={COLORS.muted} size={18} />
-      </Pressable>
-      <Modal visible={ouvert} animationType="slide" onRequestClose={() => setOuvert(false)}>
-        <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
-          <View style={F.modalHead}>
-            <Text style={F.modalTitre}>Votre véhicule</Text>
-            <Pressable onPress={() => setOuvert(false)} accessibilityRole="button" accessibilityLabel="Fermer" hitSlop={10}>
-              <X color={COLORS.blue900} size={24} />
-            </Pressable>
-          </View>
-          <View style={{ paddingHorizontal: 16 }}>
-            <TextInput value={recherche} onChangeText={setRecherche} placeholder="Rechercher une plaque, une marque…"
-              placeholderTextColor="#9aa7bd" autoCapitalize="characters" style={F.input} accessibilityLabel="Rechercher un véhicule" />
-          </View>
-          <ScrollView contentContainerStyle={{ padding: 16, gap: 8 }} keyboardShouldPersistTaps="handled">
-            {liste.map((v) => (
-              <Pressable key={v.plaque_immatriculation} onPress={() => { onChange(v.plaque_immatriculation); setOuvert(false) }}
-                accessibilityRole="button"
-                style={({ pressed }) => [F.vehiculeLigne, valeur === v.plaque_immatriculation && F.vehiculeActif, pressed && { opacity: 0.85 }]}>
-                <Text style={F.vehiculePlaque}>{v.plaque_immatriculation}</Text>
-                {!!(v.marque || v.modele) && <Text style={F.vehiculeSous}>{[v.marque, v.modele].filter(Boolean).join(' ')}</Text>}
-              </Pressable>
-            ))}
-            {liste.length === 0 && <Text style={{ color: COLORS.muted, textAlign: 'center' }}>Aucun véhicule trouvé.</Text>}
-          </ScrollView>
-        </SafeAreaView>
-      </Modal>
-    </>
-  )
-}
-
-/* ---------- Écran ---------- */
 export default function NouveauRapportScreen() {
   const nav = useNavigation<any>()
   const qc = useQueryClient()
@@ -146,7 +104,7 @@ function Formulaire({ modele, espace, vehicules, username, onEnvoye }: {
       if (b) {
         // Brouillon d'une ancienne version du formulaire : repartir du début
         setEtape(b.etape < modele.sections.length + 3 ? b.etape : 0)
-        if (!espace.vehicule_plaque && b.immatriculation) setImmatriculation(b.immatriculation)
+        if (b.immatriculation) setImmatriculation(b.immatriculation)
         setKilometrage(b.kilometrage); setVisiteTechnique(b.visite_technique)
         setItems(b.items ?? {}); setAutres(b.autres ?? {}); setCommentaires(b.commentaires ?? '')
       }
@@ -162,18 +120,19 @@ function Formulaire({ modele, espace, vehicules, username, onEnvoye }: {
   }, [pret, username, etape, immatriculation, kilometrage, visiteTechnique, items, autres, commentaires])
 
   const etapes = useMemo(() => [
-    { cle: 'infos', titre: 'Véhicule' },
+    { cle: 'infos', titre: 'Véhicule et kilométrage' },
     ...modele.sections.map((s) => ({ cle: s.cle, titre: s.titre })),
-    { cle: 'photos', titre: 'Kilométrage et photos' },
+    { cle: 'photos', titre: 'Photos du véhicule' },
     { cle: 'validation', titre: 'Signature et envoi' },
   ], [modele])
 
+  // Véhicule de la flotte correspondant à la plaque saisie (espaces, tirets et majuscules ignorés)
+  const clePlaque = (p: string) => p.toUpperCase().replace(/[^A-Z0-9]/g, '')
   const vehicule: VehiculeMini | null =
-    (espace.vehicule?.plaque_immatriculation === immatriculation ? espace.vehicule : null)
-    ?? vehicules?.find((v) => v.plaque_immatriculation === immatriculation) ?? null
+    (espace.vehicule && clePlaque(espace.vehicule.plaque_immatriculation) === clePlaque(immatriculation) ? espace.vehicule : null)
+    ?? vehicules?.find((v) => clePlaque(v.plaque_immatriculation) === clePlaque(immatriculation)) ?? null
   const vtConnue = vehicule?.visite_technique && vehicule.visite_technique >= aujourdhuiIso() ? vehicule.visite_technique : null
   const kmBas = vehicule?.kilometrage != null && kilometrage !== '' && Number(kilometrage) < vehicule.kilometrage
-  const choixVehicule = !espace.vehicule_plaque
   const cleEtape = etapes[etape]?.cle
   const section = modele.sections.find((s) => s.cle === cleEtape)
   const derniere = etape === etapes.length - 1
@@ -183,14 +142,12 @@ function Formulaire({ modele, espace, vehicules, username, onEnvoye }: {
     const cle = etapes[idx]?.cle
     if (cle === 'infos') {
       const out: string[] = []
-      if (!immatriculation) out.push('véhicule')
-      if (!vtValide) out.push('date de visite technique (AAAA-MM-JJ)')
+      if (!immatriculation.trim()) out.push('immatriculation')
+      if (!/^\d+$/.test(kilometrage)) out.push('kilométrage')
+      if (!vtValide) out.push('date de visite technique')
       return out
     }
-    if (cle === 'photos') {
-      const out = !/^\d+$/.test(kilometrage) ? ['kilométrage'] : []
-      return [...out, ...modele.photos.filter((p) => !photos[p.position]).map((p) => p.libelle)]
-    }
+    if (cle === 'photos') return modele.photos.filter((p) => !photos[p.position]).map((p) => p.libelle)
     if (cle === 'validation') return signature ? [] : ['signature']
     const s = modele.sections.find((x) => x.cle === cle)
     return s ? s.items.filter((i) => !items[i.cle]?.valeur).map((i) => i.libelle) : []
@@ -254,7 +211,7 @@ function Formulaire({ modele, espace, vehicules, username, onEnvoye }: {
     try {
       const rapport = await inspections.envoyer({
         type_rapport: 'INSPECTION',
-        immatriculation,
+        immatriculation: immatriculation.trim(),
         kilometrage: Number(kilometrage),
         visite_technique: vtConnue ? null : visiteTechnique || null,
         reponses: { items, autres },
@@ -306,50 +263,41 @@ function Formulaire({ modele, espace, vehicules, username, onEnvoye }: {
         <ScrollView ref={corps} scrollEnabled={defilement} contentContainerStyle={F.corps} keyboardShouldPersistTaps="handled">
           {cleEtape === 'infos' ? (
             <View style={{ gap: 14 }}>
-              {/* Ce que le compte connaît déjà : affiché, jamais redemandé */}
-              <View style={F.carte}>
-                <View style={F.carteHead}>
-                  <View style={F.icone}><Car color={COLORS.blue900} size={20} /></View>
-                  <View>
-                    <Text style={F.petitLabel}>Immatriculation</Text>
-                    <Text style={F.grosTexte}>{immatriculation || 'Véhicule à choisir'}</Text>
-                  </View>
-                </View>
-                <View style={F.grille}>
-                  {([
-                    ['Marque', vehicule?.marque], ['Modèle', vehicule?.modele],
-                    ['Chauffeur', espace.full_name || espace.username], ['Filiale', espace.filiale],
-                  ] as const).filter(([, v]) => v).map(([k, v]) => (
-                    <View key={k} style={F.grilleCase}>
-                      <Text style={F.petitLabel}>{k}</Text>
-                      <Text style={F.valeur} numberOfLines={1}>{v}</Text>
-                    </View>
-                  ))}
-                </View>
+              <View>
+                <Text style={F.label} nativeID="lbl-immat">Immatriculation *</Text>
+                <TextInput accessibilityLabelledBy="lbl-immat" value={immatriculation} autoCapitalize="characters"
+                  onChangeText={setImmatriculation} placeholder="ex : AA 512 YS" placeholderTextColor="#9aa7bd"
+                  style={[F.input, tentative && !immatriculation.trim() && F.inputErreur]} />
+                {!!(vehicule?.marque || vehicule?.modele) && (
+                  <Text style={F.aide}>{[vehicule?.marque, vehicule?.modele].filter(Boolean).join(' ')}</Text>
+                )}
               </View>
 
-              {choixVehicule && (
-                <View style={F.alerte}>
-                  <Text style={F.alerteTexte}>
-                    Aucun véhicule ne vous est encore attribué : choisissez-le une seule fois, il sera enregistré sur votre compte.
-                  </Text>
-                  <ChoixVehicule vehicules={vehicules} valeur={immatriculation} onChange={setImmatriculation} />
-                </View>
-              )}
+              <View>
+                <Text style={F.label} nativeID="lbl-km">Kilométrage au compteur (km) *</Text>
+                <TextInput accessibilityLabelledBy="lbl-km" value={kilometrage} keyboardType="number-pad"
+                  onChangeText={(t) => setKilometrage(t.replace(/\D/g, ''))}
+                  placeholder={vehicule?.kilometrage != null ? `Dernier relevé : ${formatNombre(vehicule.kilometrage)}` : 'ex : 45230'}
+                  placeholderTextColor="#9aa7bd"
+                  style={[F.input, tentative && !/^\d+$/.test(kilometrage) && F.inputErreur]} />
+                <Text style={[F.aide, kmBas && { color: COLORS.amber700 }]}>
+                  {kmBas
+                    ? `Inférieur au dernier relevé (${formatNombre(vehicule!.kilometrage!)} km) : vérifiez le compteur.`
+                    : vehicule?.kilometrage != null ? `Dernier relevé : ${formatNombre(vehicule.kilometrage)} km` : ' '}
+                </Text>
+              </View>
 
               {/* Visite technique : demandée seulement si inconnue ou dépassée */}
               {vtConnue ? (
                 <Text style={F.aide}>Visite technique valable jusqu’au <Text style={{ fontWeight: '800' }}>{formatDate(vtConnue)}</Text>.</Text>
               ) : (
                 <View>
-                  <Text style={F.label} nativeID="lbl-vt">
+                  <Text style={F.label}>
                     Date de la visite technique{vehicule?.visite_technique ? ' (la dernière connue est dépassée)' : ''}
                   </Text>
-                  <TextInput accessibilityLabelledBy="lbl-vt" value={visiteTechnique}
-                    onChangeText={(t) => setVisiteTechnique(t.replace(/[^\d-]/g, '').slice(0, 10))}
-                    placeholder="AAAA-MM-JJ (ex : 2027-03-15)" placeholderTextColor="#9aa7bd"
-                    keyboardType="numbers-and-punctuation" style={[F.input, !vtValide && tentative && F.inputErreur]} />
-                  <Text style={F.aide}>Facultatif.</Text>
+                  <ChampDate label="Date de la visite technique" valeur={visiteTechnique} onChange={setVisiteTechnique}
+                    erreur={tentative && !vtValide} />
+                  <Text style={F.aide}>Facultatif. Touchez pour ouvrir le calendrier.</Text>
                 </View>
               )}
             </View>
@@ -393,19 +341,6 @@ function Formulaire({ modele, espace, vehicules, username, onEnvoye }: {
             </View>
           ) : cleEtape === 'photos' ? (
             <View style={{ gap: 14 }}>
-              <View>
-                <Text style={F.label} nativeID="lbl-km">Kilométrage au compteur (km) *</Text>
-                <TextInput accessibilityLabelledBy="lbl-km" value={kilometrage} keyboardType="number-pad"
-                  onChangeText={(t) => setKilometrage(t.replace(/\D/g, ''))}
-                  placeholder={vehicule?.kilometrage != null ? `Dernier relevé : ${formatNombre(vehicule.kilometrage)}` : 'ex : 45230'}
-                  placeholderTextColor="#9aa7bd"
-                  style={[F.input, tentative && !/^\d+$/.test(kilometrage) && F.inputErreur]} />
-                <Text style={[F.aide, kmBas && { color: COLORS.amber700 }]}>
-                  {kmBas
-                    ? `Inférieur au dernier relevé (${formatNombre(vehicule!.kilometrage!)} km) : vérifiez le compteur.`
-                    : vehicule?.kilometrage != null ? `Dernier relevé : ${formatNombre(vehicule.kilometrage)} km` : ' '}
-                </Text>
-              </View>
               <Text style={F.question}>Prenez les {modele.photos.length} photos du véhicule. Touchez une case pour ouvrir l’appareil photo.</Text>
               <View style={F.photos}>
                 {modele.photos.map((p) => {
