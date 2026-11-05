@@ -61,7 +61,7 @@ export default function ProfilTab() {
             ? [espace.vehicule_plaque, [vehicule?.marque, vehicule?.modele].filter(Boolean).join(' ')].filter(Boolean).join(' — ')
             : 'Choisi lors de votre premier rapport'} />
         <View style={P.sep} />
-        <Ligne Icon={Building2} label="Filiale" valeur={espace.filiale || '—'} />
+        <Ligne Icon={Building2} label="Filiale" valeur="CAMUSAT SENEGAL" />
         <View style={P.sep} />
         <Ligne Icon={Phone} label="Téléphone" valeur={utilisateur?.telephone || '—'} />
         {!!espace.email && (<><View style={P.sep} /><Ligne Icon={Mail} label="E-mail" valeur={espace.email} /></>)}
