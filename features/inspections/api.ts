@@ -11,8 +11,8 @@ export const inspections = {
   modele: async (): Promise<ChecklistModele> => (await api.get(`${BASE}/modele`)).data,
   moi: async (): Promise<MonEspace> => (await api.get(`${BASE}/moi`)).data,
   vehicules: async (): Promise<VehiculeMini[]> => (await api.get(`${BASE}/vehicules`)).data,
-  mesRapports: async (page: number, page_size = 15): Promise<RapportPage> =>
-    (await api.get(`${BASE}/mes-rapports`, { params: { page, page_size } })).data,
+  mesRapports: async (page: number, page_size = 15, q = ''): Promise<RapportPage> =>
+    (await api.get(`${BASE}/mes-rapports`, { params: { page, page_size, ...(q.trim() ? { q: q.trim() } : {}) } })).data,
   rapport: async (id: number): Promise<RapportDetail> => (await api.get(`${BASE}/rapports/${id}`)).data,
 
   /** Adresse d'une photo d'un rapport (à charger avec l'en-tête d'authentification). */

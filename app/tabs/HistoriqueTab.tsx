@@ -47,23 +47,26 @@ export default function HistoriqueTab() {
     if (route.params?.onglet) setOnglet(route.params.onglet)
   }
 
+  // Recherche propre à chaque onglet (relancée à la fin de la saisie)
+  const [recherches, setRecherches] = useState<Record<Onglet, string>>({ rapports: '', demandes: '' })
+  const [motsCles, setMotsCles] = useState<Record<Onglet, string>>({ rapports: '', demandes: '' })
+  const recherche = recherches[onglet]
+  const setRecherche = (t: string) => setRecherches((r) => ({ ...r, [onglet]: t }))
+  useEffect(() => {
+    const t = setTimeout(() => setMotsCles({ rapports: recherches.rapports.trim(), demandes: recherches.demandes.trim() }), 350)
+    return () => clearTimeout(t)
+  }, [recherches])
+  const motCle = motsCles[onglet]
+
   const rapportsQ = useInfiniteQuery({
-    queryKey: ['mesRapports'],
-    queryFn: ({ pageParam }) => inspections.mesRapports(pageParam, PAGE),
+    queryKey: ['mesRapports', motsCles.rapports],
+    queryFn: ({ pageParam }) => inspections.mesRapports(pageParam, PAGE, motsCles.rapports),
     initialPageParam: 1,
     getNextPageParam: (last, pages) => (pages.length * PAGE < last.total ? pages.length + 1 : undefined),
   })
-  // Recherche dans mes demandes (relancée à la fin de la saisie)
-  const [recherche, setRecherche] = useState('')
-  const [motCle, setMotCle] = useState('')
-  useEffect(() => {
-    const t = setTimeout(() => setMotCle(recherche.trim()), 350)
-    return () => clearTimeout(t)
-  }, [recherche])
-
   const demandesQ = useInfiniteQuery({
-    queryKey: ['mesDemandes', motCle],
-    queryFn: ({ pageParam }) => demandes.mes(pageParam, PAGE, motCle),
+    queryKey: ['mesDemandes', motsCles.demandes],
+    queryFn: ({ pageParam }) => demandes.mes(pageParam, PAGE, motsCles.demandes),
     initialPageParam: 1,
     getNextPageParam: (last, pages) => (pages.length * PAGE < last.total ? pages.length + 1 : undefined),
     enabled: onglet === 'demandes',
@@ -76,8 +79,8 @@ export default function HistoriqueTab() {
   const q = onglet === 'rapports' ? rapportsQ : demandesQ
   const total = q.data?.pages[0]?.total ?? 0
   const sousTitre = !q.data ? undefined
-    : onglet === 'rapports' ? pluriel(total, 'rapport', 'envoyé')
-      : motCle ? `${total} résultat${total > 1 ? 's' : ''}` : pluriel(total, 'demande', 'envoyée')
+    : motCle ? `${total} résultat${total > 1 ? 's' : ''}`
+      : onglet === 'rapports' ? pluriel(total, 'rapport', 'envoyé') : pluriel(total, 'demande', 'envoyée')
 
   const entete = (
     <View style={{ gap: 12, marginBottom: 12 }}>
@@ -88,19 +91,19 @@ export default function HistoriqueTab() {
         </View>
         <Onglets actif={onglet} onChange={setOnglet} />
       </View>
-      {onglet === 'demandes' && (
-        <View style={H.recherche}>
-          <Search color={COLORS.muted} size={18} />
-          <TextInput value={recherche} onChangeText={setRecherche} placeholder="Rechercher une demande (panne, plaque, lieu…)"
-            placeholderTextColor="#9aa7bd" accessibilityLabel="Rechercher une demande" returnKeyType="search"
-            style={H.rechercheTexte} />
-          {!!recherche && (
-            <Pressable onPress={() => setRecherche('')} hitSlop={10} accessibilityRole="button" accessibilityLabel="Effacer la recherche">
-              <X color={COLORS.muted} size={18} />
-            </Pressable>
-          )}
-        </View>
-      )}
+      <View style={H.recherche}>
+        <Search color={COLORS.muted} size={18} />
+        <TextInput value={recherche} onChangeText={setRecherche}
+          placeholder={onglet === 'rapports' ? 'Rechercher un rapport (plaque, date, critique…)' : 'Rechercher une demande (panne, plaque, lieu…)'}
+          placeholderTextColor="#9aa7bd" accessibilityLabel={onglet === 'rapports' ? 'Rechercher un rapport' : 'Rechercher une demande'}
+          returnKeyType="search"
+          style={H.rechercheTexte} />
+        {!!recherche && (
+          <Pressable onPress={() => setRecherche('')} hitSlop={10} accessibilityRole="button" accessibilityLabel="Effacer la recherche">
+            <X color={COLORS.muted} size={18} />
+          </Pressable>
+        )}
+      </View>
     </View>
   )
   const commun = {
@@ -123,7 +126,7 @@ export default function HistoriqueTab() {
           data={rapportsQ.data?.pages.flatMap((p) => p.items) ?? []}
           keyExtractor={(r) => `r${r.id}`}
           renderItem={({ item }) => <RapportCarte rapport={item} onPress={() => nav.navigate('RapportDetail', { id: item.id })} />}
-          ListEmptyComponent={vide('Vous n’avez encore envoyé aucun rapport.')} />
+          ListEmptyComponent={vide(motCle ? `Aucun rapport ne correspond à « ${motCle} ».` : 'Vous n’avez encore envoyé aucun rapport.')} />
       ) : (
         <FlatList {...commun}
           data={demandesQ.data?.pages.flatMap((p) => p.items) ?? []}
