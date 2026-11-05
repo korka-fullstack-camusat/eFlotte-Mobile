@@ -206,7 +206,7 @@ const H = StyleSheet.create({
     flexBasis: '47%', flexGrow: 1, minHeight: 96, backgroundColor: COLORS.blue50, borderRadius: 18,
     borderWidth: 1, borderColor: COLORS.blue100, padding: 14, gap: 10, justifyContent: 'space-between',
   },
-  tuileIcone: { width: 40, height: 40, borderRadius: 12, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' },
+  tuileIcone: { width: 40, height: 40, justifyContent: 'center' },
   tuileTexte: { color: COLORS.blue900, fontWeight: '900', fontSize: 14 },
   voirPlus: { flexDirection: 'row', alignItems: 'center' },
   lien: { color: COLORS.blue900, fontWeight: '800' },
