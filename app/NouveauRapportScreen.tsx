@@ -362,7 +362,7 @@ function Formulaire({ modele, espace, vehicules, username, onEnvoye }: {
                         </>
                       ) : (
                         <>
-                          <Camera color={manque ? '#dc2626' : COLORS.muted} size={24} />
+                          <Camera color={manque ? '#dc2626' : COLORS.muted} size={32} />
                           <Text style={[F.photoText, manque && { color: '#dc2626' }]}>{p.libelle}</Text>
                         </>
                       )}
@@ -496,12 +496,12 @@ const F = StyleSheet.create({
   choixText: { fontWeight: '800', color: '#374151', textAlign: 'center' },
   photos: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 12 },
   photo: {
-    width: '48%', aspectRatio: 4 / 3, borderRadius: 16, borderWidth: 2, borderStyle: 'dashed', borderColor: '#cbd5e1',
+    width: '48%', aspectRatio: 1, borderRadius: 16, borderWidth: 2, borderStyle: 'dashed', borderColor: '#cbd5e1',
     backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', gap: 6, overflow: 'hidden',
   },
   photoOk: { borderStyle: 'solid', borderColor: '#10b981' },
   photoManque: { borderColor: '#f87171', backgroundColor: '#fef2f2' },
-  photoText: { color: COLORS.muted, fontWeight: '800', fontSize: 12, textAlign: 'center' },
+  photoText: { color: COLORS.muted, fontWeight: '800', fontSize: 14, textAlign: 'center' },
   photoLegende: {
     position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.55)',
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, paddingVertical: 4,
