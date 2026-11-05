@@ -7,8 +7,13 @@ import { changerMotDePasse } from '../features/auth/api'
 import { messageErreur } from '../lib/http/api'
 import PasswordInput from './PasswordInput'
 
-export default function MotDePasseForm({ onSucces, libelle = 'Enregistrer' }: { onSucces: () => void; libelle?: string }) {
-  const [ancien, setAncien] = useState('')
+export default function MotDePasseForm({ onSucces, libelle = 'Enregistrer', ancienConnu }: {
+  onSucces: () => void
+  libelle?: string
+  /** Mot de passe actuel déjà connu (saisi à la connexion) : le champ n'est alors pas affiché. */
+  ancienConnu?: string | null
+}) {
+  const [ancien, setAncien] = useState(ancienConnu ?? '')
   const [nouveau, setNouveau] = useState('')
   const [confirmation, setConfirmation] = useState('')
   const [envoi, setEnvoi] = useState(false)
@@ -33,10 +38,12 @@ export default function MotDePasseForm({ onSucces, libelle = 'Enregistrer' }: { 
 
   return (
     <View style={{ gap: 12 }}>
-      <View>
-        <Text style={S.label} nativeID="mdp-ancien">Mot de passe actuel</Text>
-        <PasswordInput accessibilityLabelledBy="mdp-ancien" value={ancien} onChangeText={setAncien} autoComplete="current-password" />
-      </View>
+      {!ancienConnu && (
+        <View>
+          <Text style={S.label} nativeID="mdp-ancien">Mot de passe actuel</Text>
+          <PasswordInput accessibilityLabelledBy="mdp-ancien" value={ancien} onChangeText={setAncien} autoComplete="current-password" />
+        </View>
+      )}
       <View>
         <Text style={S.label} nativeID="mdp-nouveau">Nouveau mot de passe</Text>
         <PasswordInput accessibilityLabelledBy="mdp-nouveau" value={nouveau} onChangeText={setNouveau} autoComplete="new-password" />

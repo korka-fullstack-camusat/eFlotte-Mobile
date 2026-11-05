@@ -13,6 +13,7 @@ import { useSession } from '../features/auth/session'
 export default function PremiereConnexionScreen() {
   const nav = useNavigation<any>()
   const nom = useSession((s) => s.utilisateur?.full_name || s.utilisateur?.username || '')
+  const ancienConnu = useSession((s) => s.motDePasseConnexion)
 
   const annuler = async () => {
     await useSession.getState().fermer()
@@ -28,9 +29,10 @@ export default function PremiereConnexionScreen() {
             <View style={S.icone}><KeyRound color={COLORS.blue900} size={26} /></View>
             <Text style={S.titre} accessibilityRole="header">Bienvenue {nom.split(' ')[0]}</Text>
             <Text style={S.texte}>
-              Pour sécuriser votre compte, choisissez votre propre mot de passe avant de commencer.
+              Le mot de passe reçu par SMS est commun à tous les nouveaux comptes : choisissez votre propre
+              mot de passe pour sécuriser votre compte avant de commencer.
             </Text>
-            <MotDePasseForm libelle="Valider et continuer" onSucces={() => {
+            <MotDePasseForm libelle="Valider et continuer" ancienConnu={ancienConnu} onSucces={() => {
               toast.success({ title: 'Mot de passe modifié' })
               nav.reset({ index: 0, routes: [{ name: 'Main' }] })
             }} />

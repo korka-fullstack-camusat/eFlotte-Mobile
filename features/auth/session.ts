@@ -34,6 +34,9 @@ type Etat = {
   pret: boolean                 // jeton relu au démarrage
   token: string | null
   utilisateur: Utilisateur | null
+  // Mot de passe tapé à la connexion, en mémoire uniquement : évite de le redemander
+  // juste après pour le changement obligatoire du mot de passe initial
+  motDePasseConnexion: string | null
   charger: () => Promise<string | null>
   ouvrir: (token: string, utilisateur: Utilisateur) => Promise<void>
   majUtilisateur: (u: Partial<Utilisateur>) => void
@@ -44,6 +47,7 @@ export const useSession = create<Etat>((set, get) => ({
   pret: false,
   token: null,
   utilisateur: null,
+  motDePasseConnexion: null,
   charger: async () => {
     let token: string | null = null
     try { token = await lire(CLE_JETON) } catch { token = null }
@@ -61,6 +65,6 @@ export const useSession = create<Etat>((set, get) => ({
   fermer: async () => {
     await ecrire(CLE_JETON, null)
     queryClient.clear()          // aucune donnée du compte précédent
-    set({ token: null, utilisateur: null })
+    set({ token: null, utilisateur: null, motDePasseConnexion: null })
   },
 }))

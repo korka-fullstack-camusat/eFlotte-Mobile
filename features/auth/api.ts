@@ -18,6 +18,7 @@ export async function connexion(username: string, password: string): Promise<Uti
     )
   }
   await useSession.getState().ouvrir(data.access_token, moi)
+  if (moi.doit_changer_mdp) useSession.setState({ motDePasseConnexion: password })
   return moi
 }
 
@@ -29,4 +30,5 @@ export async function profil(): Promise<Utilisateur> {
 export async function changerMotDePasse(ancien: string, nouveau: string) {
   await api.post('/api/auth/me/mot-de-passe', { ancien, nouveau })
   useSession.getState().majUtilisateur({ doit_changer_mdp: false })
+  useSession.setState({ motDePasseConnexion: null })
 }
