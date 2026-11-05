@@ -260,7 +260,7 @@ function Formulaire({ modele, espace, vehicules, username, onEnvoye }: {
       </View>
 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView ref={corps} scrollEnabled={defilement} contentContainerStyle={F.corps} keyboardShouldPersistTaps="handled">
+        <ScrollView ref={corps} scrollEnabled={defilement} contentContainerStyle={[F.corps, (cleEtape === 'infos' || cleEtape === 'photos') && F.corpsCentre]} keyboardShouldPersistTaps="handled">
           {cleEtape === 'infos' ? (
             <View style={{ gap: 14 }}>
               <View>
@@ -297,7 +297,6 @@ function Formulaire({ modele, espace, vehicules, username, onEnvoye }: {
                   </Text>
                   <ChampDate label="Date de la visite technique" valeur={visiteTechnique} onChange={setVisiteTechnique}
                     erreur={tentative && !vtValide} />
-                  <Text style={F.aide}>Facultatif. Touchez pour ouvrir le calendrier.</Text>
                 </View>
               )}
             </View>
@@ -449,6 +448,8 @@ const F = StyleSheet.create({
   progression: { height: 5, backgroundColor: 'rgba(15,59,130,0.15)' },
   progressionBarre: { height: 5, backgroundColor: COLORS.blue600 },
   corps: { padding: 16, paddingBottom: 32 },
+  // Pages courtes (véhicule, photos) : contenu centré dans la hauteur de l'écran
+  corpsCentre: { flexGrow: 1, justifyContent: 'center' },
   carte: { backgroundColor: '#fff', borderRadius: 18, borderWidth: 1, borderColor: COLORS.border, overflow: 'hidden' },
   carteHead: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderBottomWidth: 1, borderBottomColor: '#f1f5f9' },
   icone: { width: 40, height: 40, borderRadius: 12, backgroundColor: COLORS.blue50, alignItems: 'center', justifyContent: 'center' },
