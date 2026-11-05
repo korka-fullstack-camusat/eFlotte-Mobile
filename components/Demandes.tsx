@@ -29,6 +29,7 @@ export function CarteDemande({ d }: { d: Demande }) {
           <Text style={[T.statutTexte, { color: c.texte }]}>{STATUTS[d.statut] ?? d.statut}</Text>
         </View>
       </View>
+      {!!d.description && <Text style={T.description}>{d.description}</Text>}
       <Text style={T.meta}>{d.position} · Technicien : {d.technicien}</Text>
       {!!d.commentaire && <Text style={T.commentaire}>{d.commentaire}</Text>}
     </View>
@@ -41,6 +42,7 @@ const T = StyleSheet.create({
   ligne: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   icone: { width: 36, height: 36, borderRadius: 10, backgroundColor: COLORS.blue50, alignItems: 'center', justifyContent: 'center' },
   demandeTitre: { color: COLORS.text, fontWeight: '800', fontSize: 14 },
+  description: { color: COLORS.text, fontSize: 13, fontWeight: '600' },
   meta: { color: COLORS.muted, fontSize: 12, fontWeight: '600' },
   statut: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3 },
   statutTexte: { fontSize: 11, fontWeight: '800' },

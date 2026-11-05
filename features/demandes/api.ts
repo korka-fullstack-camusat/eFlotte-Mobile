@@ -14,6 +14,7 @@ export interface Demande {
   kilometrage: number
   position: string
   technicien: string
+  description: string | null
   statut: StatutDemande
   commentaire: string | null
   traitee_par: string | null
@@ -27,6 +28,7 @@ export interface NouvelleDemande {
   kilometrage: number
   position: string
   technicien: string
+  description: string
 }
 
 export const demandes = {

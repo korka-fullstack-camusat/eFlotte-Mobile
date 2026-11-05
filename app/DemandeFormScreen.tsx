@@ -1,5 +1,5 @@
-// Formulaire d'une demande (remontée, panne, vidange) : nature, immatriculation,
-// kilométrage actuel, position, technicien. Le serveur prévient les responsables par e-mail.
+// Formulaire d'une demande (remontée, panne ou vidange, choisie dans l'onglet Demandes) :
+// nature (explication libre), immatriculation, kilométrage actuel, position, technicien. Le serveur prévient les responsables par e-mail.
 import { useNavigation, useRoute } from '@react-navigation/native'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Send } from 'lucide-react-native'
@@ -26,13 +26,20 @@ function Champ({ label, erreur, ...props }: { label: string; erreur?: string } &
   )
 }
 
+const EXEMPLES: Record<NatureDemande, string> = {
+  REMONTEE: 'Expliquez simplement la remontée (ex. : retour du véhicule au parc)…',
+  PANNE: 'Expliquez simplement la panne (ex. : le moteur cale au démarrage)…',
+  VIDANGE: 'Expliquez simplement la demande (ex. : voyant vidange allumé)…',
+}
+
 export default function DemandeFormScreen() {
   const nav = useNavigation<any>()
   const route = useRoute<any>()
   const qc = useQueryClient()
   const plaque = useSession((s) => s.utilisateur?.vehicule_plaque) ?? ''
 
-  const [nature, setNature] = useState<NatureDemande>(route.params?.nature ?? 'PANNE')
+  const nature: NatureDemande = route.params?.nature ?? 'PANNE'   // type choisi dans l'onglet Demandes
+  const [description, setDescription] = useState('')
   const [immatriculation, setImmatriculation] = useState(plaque)
   const [kilometrage, setKilometrage] = useState('')
   const [position, setPosition] = useState('')
@@ -41,16 +48,19 @@ export default function DemandeFormScreen() {
 
   const km = Number(kilometrage.replace(/\s/g, ''))
   const erreurs = {
+    description: description.trim() ? '' : 'Expliquez simplement la demande.',
     immatriculation: immatriculation.trim() ? '' : 'Indiquez l’immatriculation.',
     kilometrage: kilometrage.trim() && Number.isInteger(km) && km >= 0 ? '' : 'Indiquez le kilométrage actuel (chiffres).',
     position: position.trim() ? '' : 'Indiquez où se trouve le véhicule.',
     technicien: technicien.trim() ? '' : 'Indiquez le technicien.',
   }
   const valide = !Object.values(erreurs).some(Boolean)
+  const Icone = ICONES_NATURE[nature]
 
   const envoi = useMutation({
     mutationFn: () => demandes.creer({
       nature, immatriculation: immatriculation.trim(), kilometrage: km, position: position.trim(), technicien: technicien.trim(),
+      description: description.trim(),
     }),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['mesDemandes'] })
@@ -68,24 +78,14 @@ export default function DemandeFormScreen() {
   return (
     <KeyboardAvoidingView style={{ flex: 1, backgroundColor: '#fff' }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={F.container} keyboardShouldPersistTaps="handled">
-        <Text style={F.titre} accessibilityRole="header">Nouvelle demande</Text>
-
-        <View style={{ gap: 6 }}>
-          <Text style={F.label}>Nature</Text>
-          <View style={F.natures} accessibilityRole="radiogroup">
-            {(Object.keys(NATURES) as NatureDemande[]).map((n) => {
-              const Icone = ICONES_NATURE[n]
-              const actif = nature === n
-              return (
-                <Pressable key={n} onPress={() => setNature(n)} accessibilityRole="radio" accessibilityState={{ checked: actif }}
-                  style={[F.nature, actif && F.natureActive]}>
-                  <Icone color={actif ? '#fff' : COLORS.blue900} size={18} />
-                  <Text style={[F.natureTexte, actif && { color: '#fff' }]}>{NATURES[n]}</Text>
-                </Pressable>
-              )
-            })}
-          </View>
+        <View style={F.entete}>
+          <Icone color={COLORS.blue900} size={26} />
+          <Text style={F.titre} accessibilityRole="header">Demande : {NATURES[nature]}</Text>
         </View>
+
+        <Champ label="Nature" value={description} onChangeText={setDescription} multiline textAlignVertical="top"
+          placeholder={EXEMPLES[nature]} style={[F.input, F.zoneTexte, essai && !!erreurs.description && { borderColor: COLORS.red600 }]}
+          erreur={essai ? erreurs.description : ''} />
 
         <Champ label="Immatriculation" value={immatriculation} onChangeText={setImmatriculation} autoCapitalize="characters"
           placeholder="AA 123 BB" erreur={essai ? erreurs.immatriculation : ''} />
@@ -115,13 +115,8 @@ const F = StyleSheet.create({
     fontSize: 16, color: COLORS.text, backgroundColor: COLORS.gray50,
   },
   erreur: { color: COLORS.red600, fontSize: 12, fontWeight: '700' },
-  natures: { flexDirection: 'row', gap: 8 },
-  nature: {
-    flex: 1, minHeight: 48, borderRadius: 14, borderWidth: 1, borderColor: COLORS.blue100, backgroundColor: COLORS.blue50,
-    alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 6,
-  },
-  natureActive: { backgroundColor: COLORS.blue900, borderColor: COLORS.blue900 },
-  natureTexte: { color: COLORS.blue900, fontWeight: '800', fontSize: 14 },
+  entete: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  zoneTexte: { minHeight: 110, paddingTop: 12, paddingBottom: 12 },
   bouton: {
     minHeight: 56, borderRadius: 18, backgroundColor: COLORS.blue900, marginTop: 8,
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,

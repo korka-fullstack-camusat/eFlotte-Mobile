@@ -1,5 +1,5 @@
 // Accueil (style Inventory) : bonjour + plaque du véhicule, notifications reçues
-// (relances, suivi des demandes, checklist attendue), accès rapide, derniers rapports.
+// (relances, suivi des demandes, checklist attendue), accès rapide.
 import { useFocusEffect, useNavigation } from '@react-navigation/native'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
@@ -9,7 +9,6 @@ import { useCallback } from 'react'
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native'
 
 import { Chargement, Erreur, Vide } from '../../components/Etats'
-import { RapportCarte } from '../../components/Rapports'
 import { COLORS } from '../../design/theme'
 import { useSession } from '../../features/auth/session'
 import { inspections } from '../../features/inspections/api'
@@ -154,25 +153,6 @@ export default function HomeTab() {
             </View>
           </View>
 
-          {/* ── Derniers rapports ── */}
-          <View style={{ gap: 10 }}>
-            <View style={H.ligneTitre}>
-              <Text style={shared.section}>Derniers rapports envoyés</Text>
-              {espace.derniers_rapports.length > 0 && (
-                <Pressable onPress={() => nav.navigate('Historique')} accessibilityRole="link" hitSlop={10} style={H.voirPlus}>
-                  <Text style={H.lien}>Voir plus</Text>
-                  <ChevronRight color={COLORS.blue900} size={16} />
-                </Pressable>
-              )}
-            </View>
-            {espace.derniers_rapports.length === 0 ? (
-              <Vide texte="Vous n’avez encore envoyé aucun rapport." />
-            ) : (
-              espace.derniers_rapports.map((r) => (
-                <RapportCarte key={r.id} rapport={r} onPress={() => nav.navigate('RapportDetail', { id: r.id })} />
-              ))
-            )}
-          </View>
         </View>
       )}
     </ScrollView>
@@ -208,6 +188,5 @@ const H = StyleSheet.create({
   },
   tuileIcone: { width: 40, height: 40, justifyContent: 'center' },
   tuileTexte: { color: COLORS.blue900, fontWeight: '900', fontSize: 14 },
-  voirPlus: { flexDirection: 'row', alignItems: 'center' },
   lien: { color: COLORS.blue900, fontWeight: '800' },
 })
