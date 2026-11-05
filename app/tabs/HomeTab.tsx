@@ -91,7 +91,7 @@ export default function HomeTab() {
       aller: () => nav.navigate('NouveauRapport'),
     })
   }
-  for (const n of (notifQ.data?.items ?? []).slice(0, 5)) {
+  for (const n of (notifQ.data?.items ?? []).slice(0, 3)) {
     cartes.push({
       id: String(n.id), type: n.type, nonLue: !n.lue_at, titre: n.titre,
       sousTitre: [n.message, formatDate(n.created_at, true)].filter(Boolean).join(' · '),
@@ -138,7 +138,7 @@ export default function HomeTab() {
             </View>
             {notifQ.isLoading && cartes.length === 0 ? <Chargement texte="Chargement des notifications…" /> :
               cartes.length === 0 ? <Vide texte="Aucune notification pour le moment." /> :
-                cartes.map((c) => <CarteNotification key={c.id} c={c} />)}
+                cartes.slice(0, 3).map((c) => <CarteNotification key={c.id} c={c} />)}
             {notifQ.isError && <Text style={H.notifSous}>Notifications indisponibles hors connexion.</Text>}
           </View>
 
