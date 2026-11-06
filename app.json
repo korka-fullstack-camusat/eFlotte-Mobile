@@ -10,7 +10,8 @@
     "updates": {
       "enabled": true,
       "checkAutomatically": "ON_LOAD",
-      "fallbackToCacheTimeout": 0
+      "fallbackToCacheTimeout": 0,
+      "url": "https://u.expo.dev/ba0e64a6-6176-4845-b664-ef4d46e119de"
     },
     "orientation": "portrait",
     "scheme": "eflottemobile",
@@ -76,6 +77,11 @@
           "recordAudioAndroid": false
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "ba0e64a6-6176-4845-b664-ef4d46e119de"
+      }
+    }
   }
 }
