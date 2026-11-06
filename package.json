@@ -10,6 +10,8 @@
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
     "build:apk": "eas build -p android --profile preview",
+    "apk": "node scripts/apk.mjs",
+    "apk:dernier": "node scripts/apk.mjs --dernier",
     "build:prod": "eas build -p android --profile production",
     "update:preview": "eas update --channel preview --message",
     "update:prod": "eas update --channel production --message"

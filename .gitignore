@@ -45,3 +45,6 @@ app-example
 # Site de téléchargement : l'APK et la build web sont générés, pas versionnés
 site/downloads/*.apk
 site/web/
+
+# APK téléchargé par « npm run apk »
+*.apk
