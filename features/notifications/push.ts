@@ -14,7 +14,7 @@ if (Platform.OS !== 'web') {
   // App ouverte : la notification s'affiche aussi en bandeau.
   Notifications.setNotificationHandler({
     handleNotification: async () => ({
-      shouldShowBanner: true, shouldShowList: true, shouldPlaySound: true, shouldSetBadge: false,
+      shouldShowBanner: true, shouldShowList: true, shouldPlaySound: true, shouldSetBadge: true,
     }),
   })
 }

@@ -1,5 +1,5 @@
 // Alertes SANS Firebase (comme Inventory) : l'app interroge elle-même le serveur
-//   • au premier plan : toutes les 30 s ;
+//   • à l'ouverture de l'app, puis toutes les 30 s au premier plan ;
 //   • en arrière-plan : toutes les ~15 min (minimum imposé par Android / iOS), même app fermée.
 // Chaque nouvelle notification (relance, suivi d'une demande) devient une notification du
 // téléphone. Si le push distant fonctionne (jeton enregistré), on ne double pas.
@@ -10,38 +10,71 @@ import * as TaskManager from 'expo-task-manager'
 import { Platform } from 'react-native'
 
 import { useSession } from '../auth/session'
+import { inspections } from '../inspections/api'
 import { notifications, type NotificationChauffeur } from './api'
 
 const TACHE = 'eflotte-verifier-notifications'
-const CLE_DERNIER_ID = 'notif:dernier_id'
 export const CLE_JETON_PUSH = 'push:jeton_expo'
 
-/** Affiche sur le téléphone les notifications arrivées depuis la dernière vérification. */
+const CLE_AFFICHEES = 'notif:affichees'        // notifications déjà montrées sur le téléphone
+const CLE_RAPPEL_CHECKLIST = 'notif:rappel_checklist'   // date (AAAA-MM-JJ) du dernier rappel checklist
+
+const aujourdHui = () => new Date().toISOString().slice(0, 10)
+
+async function lireAffichees(): Promise<Set<number>> {
+  try { return new Set(JSON.parse((await AsyncStorage.getItem(CLE_AFFICHEES)) ?? '[]') as number[]) } catch { return new Set() }
+}
+
+/** Notification du téléphone (bandeau en haut de l'écran, son, centre de notifications), comme WhatsApp. */
+async function afficher(titre: string, corps: string, data: Record<string, unknown>) {
+  await Notifications.scheduleNotificationAsync({
+    content: { title: titre, body: corps, data, sound: true },
+    trigger: Platform.OS === 'android' ? { channelId: 'default' } : null,
+  })
+}
+
+/**
+ * Affiche sur le téléphone chaque notification non lue pas encore montrée (relance, suivi de
+ * demande…), y compris à l'ouverture de l'app, une seule fois chacune ; met à jour le nombre
+ * sur l'icône de l'app ; rappelle une fois par jour la checklist de la semaine si elle manque.
+ */
 export async function verifierNouvellesNotifications(): Promise<NotificationChauffeur[]> {
   if (!useSession.getState().token) await useSession.getState().charger()   // tâche de fond : app fermée
   if (!useSession.getState().token) return []
-  const { items } = await notifications.liste(20)
-  if (!items.length) return []
-  const maxId = Math.max(...items.map((n) => n.id))
+  const { items, non_lues } = await notifications.liste(20)
+  if (Platform.OS === 'web') return []
 
-  const stocke = await AsyncStorage.getItem(CLE_DERNIER_ID)
-  if (stocke === null) {            // première fois : on part de l'état actuel, sans rejouer l'historique
-    await AsyncStorage.setItem(CLE_DERNIER_ID, String(maxId))
-    return []
-  }
-  const nouvelles = items.filter((n) => n.id > Number(stocke) && !n.lue_at).sort((a, b) => a.id - b.id)
-  if (maxId > Number(stocke)) await AsyncStorage.setItem(CLE_DERNIER_ID, String(maxId))
-  if (!nouvelles.length) return []
-
+  // Déjà montrée par le push distant (jeton enregistré) : pas de doublon
   const pushDistant = !!(await AsyncStorage.getItem(CLE_JETON_PUSH))
-  if (!pushDistant && Platform.OS !== 'web') {
+  const affichees = await lireAffichees()
+  const nouvelles = items.filter((n) => !n.lue_at && !affichees.has(n.id)).sort((a, b) => a.id - b.id)
+  if (!pushDistant) {
     for (const n of nouvelles.slice(-5)) {
-      await Notifications.scheduleNotificationAsync({
-        content: { title: n.titre, body: n.message ?? '', data: { ...(n.data ?? {}), type: n.type, notification_id: n.id }, sound: true },
-        trigger: Platform.OS === 'android' ? { channelId: 'default' } : null,
-      })
+      await afficher(n.titre, n.message ?? '', { ...(n.data ?? {}), type: n.type, notification_id: n.id })
     }
   }
+  if (nouvelles.length) {
+    const ids = [...affichees, ...nouvelles.map((n) => n.id)].slice(-300)
+    await AsyncStorage.setItem(CLE_AFFICHEES, JSON.stringify(ids))
+  }
+
+  // Checklist de la semaine pas encore envoyée : rappel une fois par jour
+  let rappel = 0
+  try {
+    if ((await AsyncStorage.getItem(CLE_RAPPEL_CHECKLIST)) !== aujourdHui()) {
+      const espace = await inspections.moi()
+      if (!espace.envoye_cette_semaine) {
+        await afficher('Checklist de la semaine à envoyer',
+          espace.vehicule_plaque ? `Véhicule ${espace.vehicule_plaque} : touchez pour remplir le rapport.` : 'Touchez pour remplir le rapport.',
+          { ecran: 'NouveauRapport', type: 'RELANCE' })
+        rappel = 1
+      }
+      await AsyncStorage.setItem(CLE_RAPPEL_CHECKLIST, aujourdHui())
+    }
+  } catch {}
+
+  // Nombre de notifications non lues sur l'icône de l'app (selon le téléphone)
+  try { await Notifications.setBadgeCountAsync(non_lues + rappel) } catch {}
   return nouvelles
 }
 
@@ -70,6 +103,7 @@ export async function activerVerificationFond(): Promise<void> {
 export async function desactiverVerificationFond(): Promise<void> {
   try {
     if (Platform.OS !== 'web' && await TaskManager.isTaskRegisteredAsync(TACHE)) await BackgroundTask.unregisterTaskAsync(TACHE)
-    await AsyncStorage.removeItem(CLE_DERNIER_ID)
+    await AsyncStorage.multiRemove([CLE_AFFICHEES, CLE_RAPPEL_CHECKLIST])
+    await Notifications.setBadgeCountAsync(0).catch(() => {})
   } catch {}
 }

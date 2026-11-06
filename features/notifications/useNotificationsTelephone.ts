@@ -23,10 +23,12 @@ export function useNotificationsTelephone() {
       try { if ((await verifierNouvellesNotifications()).length) rafraichir() } catch {}
     }
 
-    if (Platform.OS !== 'web') {
-      autoriserNotifications().then(async () => { await enregistrerPush(); await activerVerificationFond() })
-    }
-    void verifier()
+    // D'abord l'autorisation et le canal Android, puis l'affichage des notifications en attente
+    void (async () => {
+      if (Platform.OS !== 'web') await autoriserNotifications()
+      await verifier()
+      if (Platform.OS !== 'web') { await enregistrerPush(); await activerVerificationFond() }
+    })()
     const minuterie = setInterval(() => { if (AppState.currentState === 'active') void verifier() }, 30_000)
     const etat = AppState.addEventListener('change', (st) => { if (st === 'active') void verifier() })
     if (Platform.OS === 'web') return () => { clearInterval(minuterie); etat.remove() }
