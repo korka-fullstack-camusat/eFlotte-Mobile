@@ -13,5 +13,11 @@ module.exports = ({ config }) => {
       ...config.android,
       ...(firebase ? { googleServicesFile: './google-services.json' } : {}),
     },
+    // Version web (iPhone : ajoutée à l'écran d'accueil) servie par le site sous /mobile/
+    // (npm run web:build → dossier public/mobile du front).
+    // EFLOTTE_WEB=1 (posé par le script) : chemin /mobile réservé à l'export web, l'APK et
+    // les mises à jour EAS ne sont pas concernés.
+    web: { ...config.web, output: 'single', name: 'eFlotte', shortName: 'eFlotte' },
+    ...(process.env.EFLOTTE_WEB === '1' ? { experiments: { ...config.experiments, baseUrl: '/mobile' } } : {}),
   }
 }

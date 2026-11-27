@@ -1,12 +1,18 @@
 // Client HTTP vers l'API eFlotte : jeton ajouté à chaque appel, déconnexion si le serveur le refuse.
 import axios from 'axios'
+import { Platform } from 'react-native'
 
 import { useSession } from '../../features/auth/session'
 
 // Adresse de l'API = le backend de la plateforme web (mêmes comptes, mêmes données).
 // EXPO_PUBLIC_API_URL (fichier .env / eas.json), sinon le serveur de production.
+// Version web (servie par le site sous /mobile/) : toujours la même adresse que la page.
 export const DEFAULT_API_URL = 'https://eflotte.camusatsn.com'
-export const BASE_URL = (process.env.EXPO_PUBLIC_API_URL?.trim() || DEFAULT_API_URL).replace(/\/$/, '')
+export const BASE_URL = (
+  Platform.OS === 'web' && typeof window !== 'undefined'
+    ? window.location.origin
+    : process.env.EXPO_PUBLIC_API_URL?.trim() || DEFAULT_API_URL
+).replace(/\/$/, '')
 
 export const api = axios.create({ baseURL: BASE_URL, timeout: 60_000 })
 

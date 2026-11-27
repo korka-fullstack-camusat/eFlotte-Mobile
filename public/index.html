@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>eFlotte</title>
+
+    <!-- Application installable (iPhone : Partager → « Sur l'écran d'accueil ») -->
+    <link rel="manifest" href="/mobile/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/mobile/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" href="/mobile/icon-192.png" />
+    <meta name="theme-color" content="#0f3b82" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="eFlotte" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+
+    <style id="expo-reset">
+      html, body { height: 100%; margin: 0; background: #ffffff; }
+      body { overflow: hidden; }
+      #root { display: flex; height: 100%; flex: 1; }
+    </style>
+
+    <!-- Aide à l'installation sur iPhone / iPad (Safari ne propose pas de bouton d'installation) -->
+    <style>
+      #installer-ios { position: fixed; z-index: 2147483647; inset: auto 0 0 0; padding: 12px 12px calc(12px + env(safe-area-inset-bottom));
+        font-family: -apple-system, system-ui, sans-serif; display: none; }
+      #installer-ios.visible { display: block; }
+      #installer-ios .carte { max-width: 420px; margin: 0 auto; background: #fff; border-radius: 18px; padding: 16px 16px 14px;
+        box-shadow: 0 10px 40px rgba(15, 59, 130, .28); border: 1px solid #e5e9f2; color: #1f2937; position: relative; }
+      #installer-ios .titre { display: flex; align-items: center; gap: 10px; font-weight: 700; color: #0f3b82; font-size: 16px; margin: 0 28px 10px 0; }
+      #installer-ios .titre img { width: 36px; height: 36px; border-radius: 9px; border: 1px solid #eef1f6; }
+      #installer-ios ol { margin: 0; padding-left: 20px; font-size: 14px; line-height: 1.6; }
+      #installer-ios b { color: #0f3b82; }
+      #installer-ios .partager { display: inline-block; width: 18px; height: 18px; vertical-align: -3px; }
+      #installer-ios .fermer { position: absolute; top: 10px; right: 10px; width: 28px; height: 28px; border: 0; border-radius: 50%;
+        background: #f1f4f9; color: #4b5563; font-size: 18px; line-height: 28px; cursor: pointer; }
+      #installer-ios .fleche { text-align: center; color: #0f3b82; font-size: 22px; margin-top: 4px; animation: rebond 1.2s ease-in-out infinite; }
+      @keyframes rebond { 50% { transform: translateY(5px); } }
+      @media (prefers-reduced-motion: reduce) { #installer-ios .fleche { animation: none; } }
+    </style>
+  </head>
+
+  <body>
+    <noscript>Activez JavaScript pour utiliser l'application eFlotte.</noscript>
+    <div id="root"></div>
+
+    <div id="installer-ios" role="dialog" aria-labelledby="installer-titre">
+      <div class="carte">
+        <button class="fermer" type="button" aria-label="Fermer">×</button>
+        <p class="titre" id="installer-titre"><img src="/mobile/apple-touch-icon.png" alt="" /> Installer eFlotte sur l'iPhone</p>
+        <ol>
+          <li>Touchez
+            <svg class="partager" viewBox="0 0 24 24" fill="none" stroke="#0f3b82" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="Partager"><path d="M12 3v12"/><path d="m8 7 4-4 4 4"/><path d="M5 11v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-8"/></svg>
+            <b>Partager</b> dans la barre de Safari</li>
+          <li>Choisissez <b>« Sur l'écran d'accueil »</b></li>
+          <li>Touchez <b>Ajouter</b> : l'icône eFlotte apparaît avec vos autres applications</li>
+        </ol>
+        <div class="fleche" aria-hidden="true">↓</div>
+      </div>
+    </div>
+    <script>
+      (function () {
+        var ua = navigator.userAgent;
+        var ios = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        var installee = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+        if (!ios || installee) return;
+        var demande = /[?&]installer=1/.test(location.search);
+        var masquee = false;
+        try { masquee = localStorage.getItem('eflotte.installer-ios.masque') === '1'; } catch (e) {}
+        if (masquee && !demande) return;
+        var bloc = document.getElementById('installer-ios');
+        bloc.classList.add('visible');
+        bloc.querySelector('.fermer').addEventListener('click', function () {
+          bloc.classList.remove('visible');
+          try { localStorage.setItem('eflotte.installer-ios.masque', '1'); } catch (e) {}
+        });
+        // L'icône de l'écran d'accueil doit ouvrir l'app (/mobile/), pas l'aide : on retire ?installer=1
+        if (demande && history.replaceState) history.replaceState(null, '', location.pathname);
+      })();
+    </script>
+  </body>
+</html>

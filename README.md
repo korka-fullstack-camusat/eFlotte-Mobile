@@ -67,6 +67,21 @@ EAS construit l'APK dans le cloud et donne un lien / QR code de téléchargement
 chauffeurs (installation hors Play Store : autoriser « sources inconnues »).
 Pour le Play Store : `npm run build:prod` (fichier `.aab`, canal « production »).
 
+## Version web pour iPhone (écran d'accueil)
+
+Pas d'APK sur iPhone : la même app est publiée en version web, servie par le site sous
+**`/mobile/`**. Sur la page `https://eflotte.camusatsn.com/app`, un iPhone voit le bouton
+**« Installer sur l'iPhone »** : l'app s'ouvre avec l'aide *Partager → « Sur l'écran d'accueil »*,
+puis l'icône eFlotte s'ouvre en plein écran comme une app (connexion avec les mêmes identifiants).
+
+```bash
+npm run web:build      # exporte la version web dans ../../Frontend/eFlotte-Front/public/mobile
+```
+
+Puis commiter `public/mobile` dans **eFlotte-Front** et redéployer le front. À refaire après
+chaque changement de l'app à publier aussi sur iPhone. Sur le web : pas de notifications sur le
+téléphone (les notifications restent visibles dans l'app) ; l'API est appelée sur l'adresse du site.
+
 ## Mises à jour sans réinstaller l'APK (bouton « Mettre à jour »)
 
 L'app vérifie au lancement, au retour au premier plan, puis toutes les 45 s s'il existe une

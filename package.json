@@ -7,6 +7,7 @@
     "go": "expo start --go --clear",
     "android": "expo run:android",
     "web": "expo start --web",
+    "web:build": "node scripts/web.mjs",
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
     "build:apk": "eas build -p android --profile preview",

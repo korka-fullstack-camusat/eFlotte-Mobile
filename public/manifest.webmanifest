@@ -1,0 +1,17 @@
+{
+  "name": "eFlotte Camusat",
+  "short_name": "eFlotte",
+  "description": "Checklists véhicule, demandes et notifications des chauffeurs Camusat.",
+  "id": "/mobile/",
+  "start_url": "/mobile/",
+  "scope": "/mobile/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#0f3b82",
+  "lang": "fr",
+  "icons": [
+    { "src": "/mobile/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/mobile/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}
